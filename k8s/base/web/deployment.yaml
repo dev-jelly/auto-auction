@@ -15,10 +15,12 @@ spec:
       labels:
         app: web
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: jelly-minipc-ubuntu
       containers:
       - name: web
         image: docker-registry.default.svc.cluster.local:5000/auto-auction/web:latest
-        imagePullPolicy: Always
+        imagePullPolicy: Never
         ports:
         - containerPort: 80
         env:

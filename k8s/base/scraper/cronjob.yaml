@@ -20,10 +20,12 @@ spec:
             app: scraper
         spec:
           restartPolicy: OnFailure
+          nodeSelector:
+            kubernetes.io/hostname: jelly-minipc-ubuntu
           containers:
           - name: scraper
             image: docker-registry.default.svc.cluster.local:5000/auto-auction/scraper:latest
-            imagePullPolicy: Always
+            imagePullPolicy: Never
             env:
             - name: DATABASE_URL
               valueFrom:
