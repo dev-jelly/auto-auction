@@ -22,7 +22,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: scraper
-            image: ghcr.io/dev-jelly/auto-auction/scraper:latest
+            image: docker-registry.default.svc.cluster.local:5000/auto-auction/scraper:latest
             imagePullPolicy: Always
             env:
             - name: DATABASE_URL

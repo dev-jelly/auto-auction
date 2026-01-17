@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: ghcr.io/dev-jelly/auto-auction/api:latest
+        image: docker-registry.default.svc.cluster.local:5000/auto-auction/api:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080

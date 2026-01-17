@@ -13,7 +13,7 @@ spec:
       default: "main"
     - name: image-registry
       type: string
-      default: "ghcr.io/dev-jelly/auto-auction"
+      default: "docker-registry.default.svc.cluster.local:5000/auto-auction"
   workspaces:
     - name: shared-workspace
     - name: docker-credentials
