@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: #ffffff;
+    --color-text: #1f2937;
+    --color-card-bg: #ffffff;
+    --color-border: #e5e7eb;
+  }
+
+  .dark {
+    --color-bg: #111827;
+    --color-text: #f9fafb;
+    --color-card-bg: #1f2937;
+    --color-border: #374151;
+  }
+
+  html {
+    font-family: 'Pretendard', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+    @apply transition-colors duration-200;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700;
+    @apply focus:ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-900 hover:bg-gray-300;
+    @apply dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
+    @apply focus:ring-gray-500;
+  }
+
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700;
+    @apply transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply hover:shadow-md hover:border-primary-300 dark:hover:border-primary-600;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600;
+    @apply bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply placeholder-gray-400 dark:placeholder-gray-500;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.gray.400') transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: theme('colors.gray.400');
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: theme('colors.gray.500');
+  }
+}

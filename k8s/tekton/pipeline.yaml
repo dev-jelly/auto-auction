@@ -1,0 +1,127 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: auto-auction-build
+  namespace: tekton-builds
+spec:
+  params:
+    - name: git-url
+      type: string
+      default: "https://gitea.octol.ing/jelly/auto-auction.git"
+    - name: git-revision
+      type: string
+      default: "main"
+    - name: image-registry
+      type: string
+      default: "registry.2msi.org/auto-auction"
+  workspaces:
+    - name: shared-workspace
+    - name: docker-credentials
+  tasks:
+    - name: fetch-source
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+        - name: deleteExisting
+          value: "true"
+
+    - name: build-api
+      runAfter:
+        - fetch-source
+      taskRef:
+        name: kaniko
+        kind: ClusterTask
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: dockerconfig
+          workspace: docker-credentials
+      params:
+        - name: IMAGE
+          value: $(params.image-registry)/api:$(tasks.fetch-source.results.commit)
+        - name: CONTEXT
+          value: ./backend
+        - name: DOCKERFILE
+          value: ./backend/Dockerfile
+
+    - name: build-web
+      runAfter:
+        - fetch-source
+      taskRef:
+        name: kaniko
+        kind: ClusterTask
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: dockerconfig
+          workspace: docker-credentials
+      params:
+        - name: IMAGE
+          value: $(params.image-registry)/web:$(tasks.fetch-source.results.commit)
+        - name: CONTEXT
+          value: ./frontend
+        - name: DOCKERFILE
+          value: ./frontend/Dockerfile
+
+    - name: build-scraper
+      runAfter:
+        - fetch-source
+      taskRef:
+        name: kaniko
+        kind: ClusterTask
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+        - name: dockerconfig
+          workspace: docker-credentials
+      params:
+        - name: IMAGE
+          value: $(params.image-registry)/scraper:$(tasks.fetch-source.results.commit)
+        - name: CONTEXT
+          value: ./scraper
+        - name: DOCKERFILE
+          value: ./scraper/Dockerfile
+
+    - name: tag-latest
+      runAfter:
+        - build-api
+        - build-web
+        - build-scraper
+      taskSpec:
+        steps:
+          - name: tag-images
+            image: gcr.io/go-containerregistry/crane:latest
+            script: |
+              #!/bin/sh
+              crane copy $(params.image-registry)/api:$(tasks.fetch-source.results.commit) $(params.image-registry)/api:latest
+              crane copy $(params.image-registry)/web:$(tasks.fetch-source.results.commit) $(params.image-registry)/web:latest
+              crane copy $(params.image-registry)/scraper:$(tasks.fetch-source.results.commit) $(params.image-registry)/scraper:latest
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: auto-auction-build-
+  namespace: tekton-builds
+spec:
+  pipelineRef:
+    name: auto-auction-build
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: docker-credentials
+      secret:
+        secretName: registry-credentials

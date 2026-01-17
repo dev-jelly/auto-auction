@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../base
+
+namespace: auto-auction
+
+images:
+- name: registry.2msi.org/auto-auction/api
+  newTag: latest
+- name: registry.2msi.org/auto-auction/web
+  newTag: latest
+- name: registry.2msi.org/auto-auction/scraper
+  newTag: latest
+
+# Production-specific patches can be added here
+# patchesStrategicMerge:
+# - patches/api-replicas.yaml

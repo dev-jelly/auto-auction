@@ -1,0 +1,41 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: auto-auction-scraper
+  namespace: auto-auction
+  labels:
+    app: scraper
+spec:
+  schedule: "0 */6 * * *"  # 매 6시간마다 실행 (00:00, 06:00, 12:00, 18:00)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 1800  # 30분 타임아웃
+      template:
+        metadata:
+          labels:
+            app: scraper
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: scraper
+            image: registry.2msi.org/auto-auction/scraper:latest
+            imagePullPolicy: Always
+            env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: auto-auction-secrets
+                  key: database-url
+            - name: SCRAPE_MAX_PAGES
+              value: "20"
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"

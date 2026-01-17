@@ -1,0 +1,550 @@
+import { useState, useEffect, useCallback } from 'react';
+import type { Vehicle, VehicleFilters, VehicleApiResponse } from '../../types/vehicle';
+import FilterSidebar from './FilterSidebar';
+
+const formatPrice = (price: number) => {
+  return new Intl.NumberFormat('ko-KR').format(price);
+};
+
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+const getFuelTypeLabel = (fuel: string) => {
+  const labels: Record<string, string> = {
+    gasoline: '가솔린',
+    diesel: '디젤',
+    lpg: 'LPG',
+    hybrid: '하이브리드',
+    electric: '전기',
+  };
+  return labels[fuel.toLowerCase()] || fuel;
+};
+
+const getTransmissionLabel = (trans: string) => {
+  const labels: Record<string, string> = {
+    auto: '자동',
+    automatic: '자동',
+    manual: '수동',
+  };
+  return labels[trans.toLowerCase()] || trans;
+};
+
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'active':
+    case '진행중':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+    case 'upcoming':
+    case '예정':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+    case 'ended':
+    case '종료':
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+  }
+};
+
+const getStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    active: '진행중',
+    upcoming: '예정',
+    ended: '종료',
+  };
+  return labels[status.toLowerCase()] || status;
+};
+
+interface VehicleCardProps {
+  vehicle: Vehicle;
+}
+
+function VehicleCard({ vehicle }: VehicleCardProps) {
+  return (
+    <article className="card card-hover overflow-hidden group">
+      <div className="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+        <svg
+          className="w-16 h-16 text-gray-400 dark:text-gray-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+          />
+        </svg>
+        <span
+          className={`absolute top-3 right-3 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+            vehicle.status
+          )}`}
+        >
+          {getStatusLabel(vehicle.status)}
+        </span>
+      </div>
+
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+            {vehicle.modelName}
+          </h3>
+          <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+            {vehicle.year}년
+          </span>
+        </div>
+
+        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mb-3">
+          {formatPrice(vehicle.price)}
+          <span className="text-sm font-normal text-gray-500 dark:text-gray-400">원</span>
+        </p>
+
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
+            {getFuelTypeLabel(vehicle.fuelType)}
+          </span>
+          <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
+            {getTransmissionLabel(vehicle.transmission)}
+          </span>
+        </div>
+
+        <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            <span className="truncate">{vehicle.location}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+              />
+            </svg>
+            <span className="truncate">{vehicle.organization}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <span>마감: {formatDate(vehicle.dueDate)}</span>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            관리번호: {vehicle.mgmtNumber}
+          </span>
+          <button className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium transition-colors">
+            상세보기 &rarr;
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="card overflow-hidden animate-pulse">
+      <div className="h-40 bg-gray-200 dark:bg-gray-700" />
+      <div className="p-4">
+        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-3" />
+        <div className="flex gap-2 mb-3">
+          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+      <svg
+        className="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        검색 결과가 없습니다
+      </h3>
+      <p className="text-gray-500 dark:text-gray-400 max-w-md">
+        조건에 맞는 차량을 찾을 수 없습니다. 필터 조건을 변경해 보세요.
+      </p>
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+      <svg
+        className="w-16 h-16 text-red-400 dark:text-red-500 mb-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
+      </svg>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        데이터를 불러오는 데 실패했습니다
+      </h3>
+      <p className="text-gray-500 dark:text-gray-400 mb-4">{message}</p>
+      <button onClick={onRetry} className="btn btn-primary">
+        다시 시도
+      </button>
+    </div>
+  );
+}
+
+export default function VehicleGrid() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<VehicleFilters>({});
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<'price' | 'year' | 'dueDate'>('dueDate');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const pageSize = 12;
+
+  const buildQueryString = useCallback(
+    (filters: VehicleFilters, page: number) => {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('pageSize', String(pageSize));
+      params.set('sortBy', sortBy);
+      params.set('sortOrder', sortOrder);
+
+      if (filters.search) params.set('search', filters.search);
+      if (filters.yearMin) params.set('yearMin', String(filters.yearMin));
+      if (filters.yearMax) params.set('yearMax', String(filters.yearMax));
+      if (filters.priceMin) params.set('priceMin', String(filters.priceMin));
+      if (filters.priceMax) params.set('priceMax', String(filters.priceMax));
+      if (filters.fuelType) params.set('fuelType', filters.fuelType);
+      if (filters.location) params.set('location', filters.location);
+      if (filters.status) params.set('status', filters.status);
+
+      return params.toString();
+    },
+    [sortBy, sortOrder]
+  );
+
+  const fetchVehicles = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const queryString = buildQueryString(filters, page);
+      const response = await fetch(`/api/vehicles?${queryString}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: VehicleApiResponse = await response.json();
+      setVehicles(data.data);
+      setTotal(data.total);
+    } catch (err) {
+      console.error('Failed to fetch vehicles:', err);
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다');
+      // Set demo data for development
+      setVehicles(getDemoVehicles());
+      setTotal(getDemoVehicles().length);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, page, buildQueryString]);
+
+  useEffect(() => {
+    fetchVehicles();
+  }, [fetchVehicles]);
+
+  const handleFiltersChange = useCallback((newFilters: VehicleFilters) => {
+    setFilters(newFilters);
+    setPage(1);
+  }, []);
+
+  const handleSortChange = useCallback((newSortBy: typeof sortBy) => {
+    setSortBy(newSortBy);
+    if (newSortBy === sortBy) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortOrder('asc');
+    }
+    setPage(1);
+  }, [sortBy]);
+
+  const totalPages = Math.ceil(total / pageSize);
+
+  return (
+    <div className="flex gap-6">
+      <FilterSidebar filters={filters} onFiltersChange={handleFiltersChange} />
+
+      <div className="flex-1 min-w-0">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">차량 목록</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              총 <span className="font-semibold text-primary-600 dark:text-primary-400">{total}</span>대의 차량
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400">정렬:</span>
+            <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+              <button
+                onClick={() => handleSortChange('dueDate')}
+                className={`px-3 py-1.5 text-sm transition-colors ${
+                  sortBy === 'dueDate'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                마감일
+              </button>
+              <button
+                onClick={() => handleSortChange('price')}
+                className={`px-3 py-1.5 text-sm border-l border-gray-300 dark:border-gray-600 transition-colors ${
+                  sortBy === 'price'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                가격
+              </button>
+              <button
+                onClick={() => handleSortChange('year')}
+                className={`px-3 py-1.5 text-sm border-l border-gray-300 dark:border-gray-600 transition-colors ${
+                  sortBy === 'year'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                연식
+              </button>
+            </div>
+            <button
+              onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+              className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              title={sortOrder === 'asc' ? '오름차순' : '내림차순'}
+            >
+              <svg
+                className={`w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform ${
+                  sortOrder === 'desc' ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+          {loading ? (
+            Array.from({ length: 6 }).map((_, i) => <LoadingSkeleton key={i} />)
+          ) : error && vehicles.length === 0 ? (
+            <ErrorState message={error} onRetry={fetchVehicles} />
+          ) : vehicles.length === 0 ? (
+            <EmptyState />
+          ) : (
+            vehicles.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} />)
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && !loading && (
+          <div className="flex items-center justify-center gap-2 mt-8">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (page <= 3) {
+                  pageNum = i + 1;
+                } else if (page >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = page - 2 + i;
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                      page === pageNum
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Demo data for development
+function getDemoVehicles(): Vehicle[] {
+  return [
+    {
+      id: 1,
+      mgmtNumber: '2024-0001',
+      carNumber: '12가 3456',
+      modelName: '현대 그랜저 IG',
+      fuelType: 'gasoline',
+      transmission: 'automatic',
+      year: 2020,
+      price: 15800000,
+      location: '서울특별시',
+      organization: '한국도로공사',
+      dueDate: '2024-02-15',
+      status: 'active',
+    },
+    {
+      id: 2,
+      mgmtNumber: '2024-0002',
+      carNumber: '34나 5678',
+      modelName: '기아 K5 DL3',
+      fuelType: 'diesel',
+      transmission: 'automatic',
+      year: 2021,
+      price: 12500000,
+      location: '경기도 수원시',
+      organization: '수원시청',
+      dueDate: '2024-02-18',
+      status: 'active',
+    },
+    {
+      id: 3,
+      mgmtNumber: '2024-0003',
+      carNumber: '56다 7890',
+      modelName: '르노삼성 SM6',
+      fuelType: 'lpg',
+      transmission: 'automatic',
+      year: 2019,
+      price: 8900000,
+      location: '부산광역시',
+      organization: '부산항만공사',
+      dueDate: '2024-02-20',
+      status: 'upcoming',
+    },
+    {
+      id: 4,
+      mgmtNumber: '2024-0004',
+      carNumber: '78라 1234',
+      modelName: '쉐보레 말리부',
+      fuelType: 'gasoline',
+      transmission: 'automatic',
+      year: 2018,
+      price: 7200000,
+      location: '대전광역시',
+      organization: '한국철도공사',
+      dueDate: '2024-02-22',
+      status: 'active',
+    },
+    {
+      id: 5,
+      mgmtNumber: '2024-0005',
+      carNumber: '90마 5678',
+      modelName: '현대 아반떼 CN7',
+      fuelType: 'hybrid',
+      transmission: 'automatic',
+      year: 2022,
+      price: 18500000,
+      location: '인천광역시',
+      organization: '인천국제공항공사',
+      dueDate: '2024-02-25',
+      status: 'upcoming',
+    },
+    {
+      id: 6,
+      mgmtNumber: '2024-0006',
+      carNumber: '12바 9012',
+      modelName: '기아 니로 EV',
+      fuelType: 'electric',
+      transmission: 'automatic',
+      year: 2021,
+      price: 22000000,
+      location: '광주광역시',
+      organization: '한국전력공사',
+      dueDate: '2024-02-28',
+      status: 'active',
+    },
+  ];
+}

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: auto-auction
+  labels:
+    app.kubernetes.io/name: auto-auction
+    app.kubernetes.io/part-of: auto-auction

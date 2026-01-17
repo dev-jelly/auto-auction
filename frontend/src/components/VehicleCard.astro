@@ -1,0 +1,151 @@
+---
+interface Props {
+  id: number;
+  mgmtNumber: string;
+  carNumber: string;
+  modelName: string;
+  fuelType: string;
+  transmission: string;
+  year: number;
+  price: number;
+  location: string;
+  organization: string;
+  dueDate: string;
+  status: string;
+}
+
+const {
+  id,
+  mgmtNumber,
+  carNumber,
+  modelName,
+  fuelType,
+  transmission,
+  year,
+  price,
+  location,
+  organization,
+  dueDate,
+  status,
+} = Astro.props;
+
+const formatPrice = (price: number) => {
+  return new Intl.NumberFormat('ko-KR').format(price);
+};
+
+const formatDate = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ko-KR', {
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+const getFuelTypeLabel = (fuel: string) => {
+  const labels: Record<string, string> = {
+    gasoline: '가솔린',
+    diesel: '디젤',
+    lpg: 'LPG',
+    hybrid: '하이브리드',
+    electric: '전기',
+  };
+  return labels[fuel.toLowerCase()] || fuel;
+};
+
+const getTransmissionLabel = (trans: string) => {
+  const labels: Record<string, string> = {
+    auto: '자동',
+    automatic: '자동',
+    manual: '수동',
+  };
+  return labels[trans.toLowerCase()] || trans;
+};
+
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'active':
+    case '진행중':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+    case 'upcoming':
+    case '예정':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+    case 'ended':
+    case '종료':
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+  }
+};
+
+const getStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    active: '진행중',
+    upcoming: '예정',
+    ended: '종료',
+  };
+  return labels[status.toLowerCase()] || status;
+};
+---
+
+<article class="card card-hover overflow-hidden group">
+  <div class="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+    <svg class="w-16 h-16 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+    </svg>
+    <span class={`absolute top-3 right-3 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(status)}`}>
+      {getStatusLabel(status)}
+    </span>
+  </div>
+
+  <div class="p-4">
+    <div class="flex items-start justify-between gap-2 mb-2">
+      <h3 class="font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+        {modelName}
+      </h3>
+      <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{year}년</span>
+    </div>
+
+    <p class="text-2xl font-bold text-primary-600 dark:text-primary-400 mb-3">
+      {formatPrice(price)}
+      <span class="text-sm font-normal text-gray-500 dark:text-gray-400">원</span>
+    </p>
+
+    <div class="flex flex-wrap gap-1.5 mb-3">
+      <span class="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
+        {getFuelTypeLabel(fuelType)}
+      </span>
+      <span class="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
+        {getTransmissionLabel(transmission)}
+      </span>
+    </div>
+
+    <div class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <span class="truncate">{location}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+        <span class="truncate">{organization}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span>마감: {formatDate(dueDate)}</span>
+      </div>
+    </div>
+
+    <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+      <span class="text-xs text-gray-400 dark:text-gray-500">관리번호: {mgmtNumber}</span>
+      <button class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium transition-colors">
+        상세보기 &rarr;
+      </button>
+    </div>
+  </div>
+</article>
