@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://gitea.octol.ing/jelly/auto-auction.git
+    repoURL: https://gitea.octol.ing/dev-jelly/auto-auction.git
     targetRevision: main
     path: k8s/overlays/production
   destination:
