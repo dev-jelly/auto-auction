@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: registry.2msi.org/auto-auction/web:latest
+        image: ghcr.io/dev-jelly/auto-auction/web:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80

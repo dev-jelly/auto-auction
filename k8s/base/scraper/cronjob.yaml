@@ -22,7 +22,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: scraper
-            image: registry.2msi.org/auto-auction/scraper:latest
+            image: ghcr.io/dev-jelly/auto-auction/scraper:latest
             imagePullPolicy: Always
             env:
             - name: DATABASE_URL
