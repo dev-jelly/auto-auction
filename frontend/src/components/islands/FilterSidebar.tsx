@@ -8,18 +8,25 @@ interface FilterSidebarProps {
 
 const FUEL_TYPES = [
   { value: '', label: '전체' },
-  { value: 'gasoline', label: '가솔린' },
-  { value: 'diesel', label: '디젤' },
-  { value: 'lpg', label: 'LPG' },
-  { value: 'hybrid', label: '하이브리드' },
-  { value: 'electric', label: '전기' },
+  { value: '경유', label: '경유' },
+  { value: '휘발유', label: '휘발유' },
+  { value: 'LPG', label: 'LPG' },
+  { value: '하이브리드', label: '하이브리드' },
+  { value: '전기', label: '전기' },
 ];
 
 const STATUS_OPTIONS = [
   { value: '', label: '전체' },
-  { value: 'active', label: '진행중' },
-  { value: 'upcoming', label: '예정' },
-  { value: 'ended', label: '종료' },
+  { value: '입찰중', label: '입찰중' },
+  { value: '유찰', label: '유찰' },
+  { value: '매각', label: '매각' },
+];
+
+const SOURCE_OPTIONS = [
+  { value: '', label: '전체' },
+  { value: 'automart', label: '오토마트' },
+  { value: 'court_auction', label: '법원경매' },
+  { value: 'onbid', label: '온비드' },
 ];
 
 const YEAR_OPTIONS = (() => {
@@ -199,6 +206,30 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
             </div>
           </div>
 
+          {/* Source */}
+          <div className="mb-6">
+            <label className="label">출처</label>
+            <div className="flex flex-wrap gap-2">
+              {SOURCE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => handleFilterChange('source', option.value)}
+                  className={`
+                    px-3 py-1.5 text-sm rounded-full border transition-colors
+                    ${
+                      localFilters.source === option.value ||
+                      (!localFilters.source && option.value === '')
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-primary-400'
+                    }
+                  `}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Year Range */}
           <div className="mb-6">
             <label className="label">연식</label>
@@ -273,6 +304,25 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Inspection report */}
+          <div className="mb-6">
+            <label className="label">차량점검서</label>
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={!!localFilters.hasInspection}
+                onChange={(e) => {
+                  const newFilters = { ...localFilters, hasInspection: e.target.checked || undefined };
+                  setLocalFilters(newFilters);
+                }}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                점검서 보유 차량만
+              </span>
+            </label>
           </div>
 
           {/* Location */}

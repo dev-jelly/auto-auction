@@ -18,6 +18,94 @@ interface Vehicle {
   scrapedAt: string;       // 수집 시각
 }
 
+function parseKoreanDate(dateStr: string): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+
+  // Format: "MM/DD (HH:mm)" or "MM/DD(HH:mm)" — no year, infer current
+  const shortMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\s*\((\d{2}):(\d{2})\)/);
+  if (shortMatch) {
+    const [, mm, dd, hh, mi] = shortMatch;
+    const year = new Date().getFullYear();
+    // Handle "24:00" as next day "00:00"
+    if (hh === '24') {
+      const date = new Date(year, parseInt(mm, 10) - 1, parseInt(dd, 10) + 1);
+      const m2 = String(date.getMonth() + 1).padStart(2, '0');
+      const d2 = String(date.getDate()).padStart(2, '0');
+      return `${date.getFullYear()}-${m2}-${d2}T00:${mi}:00+09:00`;
+    }
+    return `${year}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}T${hh}:${mi}:00+09:00`;
+  }
+
+  // Format: "YYYY.MM.DD HH:mm" or "YYYY-MM-DD" or "YYYY.MM.DD"
+  const normalized = trimmed.replace(/\./g, '-');
+  const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}))?/);
+  if (match) {
+    const [, year, month, day, hour, minute] = match;
+    const h = hour || '00';
+    const m = minute || '00';
+    return `${year}-${month}-${day}T${h}:${m}:00+09:00`;
+  }
+
+  // Return empty string for unparseable dates to avoid backend errors
+  return '';
+}
+
+async function submitToAPI(vehicles: Vehicle[], apiUrl: string): Promise<{ submitted: number; failed: number }> {
+  let submitted = 0;
+  let failed = 0;
+  const total = vehicles.length;
+
+  for (const vehicle of vehicles) {
+    const payload = {
+      mgmt_number: vehicle.mgmtNumber,
+      car_number: vehicle.carNumber,
+      model_name: vehicle.modelName,
+      fuel_type: vehicle.fuelType,
+      due_date: parseKoreanDate(vehicle.bidDeadline),
+      detail_url: vehicle.detailUrl,
+      organization: vehicle.organization,
+      location: vehicle.location,
+      year: vehicle.year,
+      price: vehicle.price,
+      transmission: vehicle.transmission,
+      status: vehicle.status,
+    };
+
+    let success = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const response = await fetch(`${apiUrl}/api/vehicles/upsert`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+        success = true;
+        break;
+      } catch (err) {
+        if (attempt < 3) {
+          const delay = Math.pow(2, attempt) * 500; // 1s, 2s
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          console.error(`  Failed to submit ${vehicle.mgmtNumber} after 3 attempts:`, err);
+        }
+      }
+    }
+
+    if (success) {
+      submitted++;
+      console.log(`  Submitted ${submitted}/${total}: ${vehicle.mgmtNumber} - ${vehicle.modelName}`);
+    } else {
+      failed++;
+    }
+  }
+
+  return { submitted, failed };
+}
+
 async function parseVehicleRow(row: any): Promise<Vehicle | null> {
   try {
     const cells = await row.$$(':scope > td');
@@ -180,7 +268,12 @@ async function scrapeVehicles(page: Page, maxPages: number = 10): Promise<Vehicl
 }
 
 async function main() {
+  const apiUrl = process.env.API_URL || 'http://auto-auction-api:8080';
+  const maxPages = parseInt(process.env.SCRAPE_MAX_PAGES || '10', 10);
+
   console.log('Starting Automart scraper...');
+  console.log(`API URL: ${apiUrl}`);
+  console.log(`Max pages: ${maxPages}`);
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
@@ -199,26 +292,32 @@ async function main() {
     await page.waitForTimeout(3000);
 
     // 차량 수집
-    const vehicles = await scrapeVehicles(page, 10);
+    const vehicles = await scrapeVehicles(page, maxPages);
 
     // 중복 제거
     const uniqueVehicles = Array.from(
       new Map(vehicles.map(v => [v.mgmtNumber, v])).values()
     );
 
-    // 결과 저장
+    // 결과 저장 (backup)
     const outputPath = 'vehicles.json';
     fs.writeFileSync(outputPath, JSON.stringify(uniqueVehicles, null, 2));
     console.log(`\nTotal: ${uniqueVehicles.length} unique vehicles saved to ${outputPath}`);
 
-    // 샘플 출력
-    if (uniqueVehicles.length > 0) {
-      console.log('\nSample vehicle:');
-      console.log(JSON.stringify(uniqueVehicles[0], null, 2));
+    // API로 제출
+    console.log(`\nSubmitting ${uniqueVehicles.length} vehicles to API at ${apiUrl}...`);
+    const { submitted, failed } = await submitToAPI(uniqueVehicles, apiUrl);
+
+    console.log(`\nCompleted: ${uniqueVehicles.length} scraped, ${submitted} submitted, ${failed} failed`);
+
+    if (uniqueVehicles.length > 0 && submitted === 0) {
+      console.error('All submissions failed');
+      process.exit(1);
     }
 
   } catch (e) {
     console.error('Scraper error:', e);
+    process.exit(1);
   } finally {
     await browser.close();
   }

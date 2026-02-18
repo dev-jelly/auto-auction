@@ -34,6 +34,8 @@ spec:
                   key: database-url
             - name: SCRAPE_MAX_PAGES
               value: "20"
+            - name: API_URL
+              value: "http://auto-auction-api.auto-auction.svc.cluster.local"
             resources:
               requests:
                 memory: "512Mi"

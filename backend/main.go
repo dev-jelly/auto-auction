@@ -49,8 +49,12 @@ func main() {
 	{
 		api.GET("/vehicles", vehicleHandler.ListVehicles)
 		api.GET("/vehicles/:id", vehicleHandler.GetVehicle)
+		api.GET("/vehicles/:id/history", vehicleHandler.GetVehicleHistory)
+		api.GET("/vehicles/:id/inspection", vehicleHandler.GetVehicleInspection)
 		api.POST("/vehicles/upsert", vehicleHandler.UpsertVehicle)
+		api.POST("/vehicles/inspection/upsert", vehicleHandler.UpsertVehicleInspection)
 		api.GET("/stats", statsHandler.GetStats)
+		api.GET("/sources", statsHandler.GetSources)
 	}
 
 	srv := &http.Server{

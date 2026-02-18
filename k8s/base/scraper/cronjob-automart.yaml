@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scraper-automart
+  namespace: auto-auction
+  labels:
+    app: scraper
+    scraper-source: automart
+spec:
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app: scraper
+            scraper-source: automart
+        spec:
+          restartPolicy: OnFailure
+          nodeSelector:
+            kubernetes.io/hostname: jelly-minipc-ubuntu
+          containers:
+          - name: scraper
+            image: auto-auction-scraper:v2-inspection-fix2
+            imagePullPolicy: Never
+            env:
+            - name: SCRAPER_SOURCE
+              value: "automart"
+            - name: SCRAPE_INCLUDE_COMPLETED
+              value: "true"
+            - name: SCRAPE_MAX_PAGES
+              value: "20"
+            - name: SCRAPE_INSPECTION_REPORTS
+              value: "true"
+            - name: SCRAPE_INSPECTION_DELAY
+              value: "2000"
+            - name: API_URL
+              value: "http://auto-auction-api.auto-auction.svc.cluster.local"
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"

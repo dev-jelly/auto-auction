@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scraper-court-auction
+  namespace: auto-auction
+  labels:
+    app: scraper
+    scraper-source: court-auction
+spec:
+  schedule: "30 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      activeDeadlineSeconds: 1800
+      template:
+        metadata:
+          labels:
+            app: scraper
+            scraper-source: court-auction
+        spec:
+          restartPolicy: OnFailure
+          nodeSelector:
+            kubernetes.io/hostname: jelly-minipc-ubuntu
+          containers:
+          - name: scraper
+            image: ghcr.io/dev-jelly/auto-auction-scraper:latest
+            imagePullPolicy: Never
+            env:
+            - name: SCRAPER_SOURCE
+              value: "court_auction"
+            - name: SCRAPE_INCLUDE_COMPLETED
+              value: "true"
+            - name: SCRAPE_MAX_PAGES
+              value: "20"
+            - name: API_URL
+              value: "http://auto-auction-api.auto-auction.svc.cluster.local"
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"

@@ -19,7 +19,7 @@ spec:
         kubernetes.io/hostname: jelly-minipc-ubuntu
       containers:
       - name: api
-        image: docker-registry.default.svc.cluster.local:5000/auto-auction/api:latest
+        image: ghcr.io/dev-jelly/auto-auction-api:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 8080

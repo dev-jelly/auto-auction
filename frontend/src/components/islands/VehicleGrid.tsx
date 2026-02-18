@@ -16,13 +16,17 @@ const formatDate = (dateStr: string) => {
 
 const getFuelTypeLabel = (fuel: string) => {
   const labels: Record<string, string> = {
-    gasoline: '가솔린',
-    diesel: '디젤',
+    gasoline: '휘발유',
+    diesel: '경유',
     lpg: 'LPG',
     hybrid: '하이브리드',
     electric: '전기',
+    휘발유: '휘발유',
+    경유: '경유',
+    하이브리드: '하이브리드',
+    전기: '전기',
   };
-  return labels[fuel.toLowerCase()] || fuel;
+  return labels[fuel.toLowerCase()] || labels[fuel] || fuel;
 };
 
 const getTransmissionLabel = (trans: string) => {
@@ -35,14 +39,13 @@ const getTransmissionLabel = (trans: string) => {
 };
 
 const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'active':
-    case '진행중':
+  switch (status) {
+    case '입찰중':
       return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-    case 'upcoming':
-    case '예정':
+    case '유찰':
+      return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+    case '매각':
       return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-    case 'ended':
     case '종료':
       return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     default:
@@ -51,12 +54,29 @@ const getStatusColor = (status: string) => {
 };
 
 const getStatusLabel = (status: string) => {
+  return status;
+};
+
+const getSourceLabel = (source?: string) => {
   const labels: Record<string, string> = {
-    active: '진행중',
-    upcoming: '예정',
-    ended: '종료',
+    automart: '오토마트',
+    court_auction: '법원경매',
+    onbid: '온비드',
   };
-  return labels[status.toLowerCase()] || status;
+  return source ? labels[source] || source : '';
+};
+
+const getSourceColor = (source?: string) => {
+  switch (source) {
+    case 'automart':
+      return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
+    case 'court_auction':
+      return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
+    case 'onbid':
+      return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+  }
 };
 
 interface VehicleCardProps {
@@ -64,49 +84,88 @@ interface VehicleCardProps {
 }
 
 function VehicleCard({ vehicle }: VehicleCardProps) {
+  const [imgError, setImgError] = useState(false);
+  const isCompleted = !!vehicle.result_status;
+  const displayPrice = isCompleted && vehicle.final_price ? vehicle.final_price : vehicle.price;
+  const priceLabel = isCompleted && vehicle.final_price ? '낙찰가' : '예정가';
+  const hasImage = vehicle.image_urls?.[0] && !imgError;
+
   return (
+    <a href={`/vehicles/${vehicle.id}`} className="block">
     <article className="card card-hover overflow-hidden group">
       <div className="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
-        <svg
-          className="w-16 h-16 text-gray-400 dark:text-gray-500"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+        {hasImage ? (
+          <img
+            src={vehicle.image_urls![0]}
+            alt={vehicle.model_name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={() => setImgError(true)}
           />
-        </svg>
+        ) : (
+          <svg
+            className="w-16 h-16 text-gray-400 dark:text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+            />
+          </svg>
+        )}
+        {vehicle.source && (
+          <span
+            className={`absolute top-3 left-3 px-2 py-1 text-xs font-medium rounded ${getSourceColor(
+              vehicle.source
+            )}`}
+          >
+            {getSourceLabel(vehicle.source)}
+          </span>
+        )}
         <span
           className={`absolute top-3 right-3 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-            vehicle.status
+            vehicle.result_status || vehicle.status
           )}`}
         >
-          {getStatusLabel(vehicle.status)}
+          {getStatusLabel(vehicle.result_status || vehicle.status)}
         </span>
+        {vehicle.has_inspection && (
+          <span
+            className="absolute bottom-3 right-3 p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm"
+            title="점검서 보유"
+          >
+            <svg className="w-4 h-4 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </span>
+        )}
       </div>
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
           <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
-            {vehicle.modelName}
+            {vehicle.model_name}
           </h3>
           <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
             {vehicle.year}년
           </span>
         </div>
 
-        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mb-3">
-          {formatPrice(vehicle.price)}
-          <span className="text-sm font-normal text-gray-500 dark:text-gray-400">원</span>
-        </p>
+        <div className="mb-3">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{priceLabel}</p>
+          <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+            {formatPrice(displayPrice)}
+            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">원</span>
+          </p>
+        </div>
 
         <div className="flex flex-wrap gap-1.5 mb-3">
           <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
-            {getFuelTypeLabel(vehicle.fuelType)}
+            {getFuelTypeLabel(vehicle.fuel_type)}
           </span>
           <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
             {getTransmissionLabel(vehicle.transmission)}
@@ -151,20 +210,21 @@ function VehicleCard({ vehicle }: VehicleCardProps) {
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
               />
             </svg>
-            <span>마감: {formatDate(vehicle.dueDate)}</span>
+            <span>마감: {formatDate(vehicle.due_date)}</span>
           </div>
         </div>
 
         <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            관리번호: {vehicle.mgmtNumber}
+            관리번호: {vehicle.mgmt_number}
           </span>
-          <button className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium transition-colors">
+          <span className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium transition-colors">
             상세보기 &rarr;
-          </button>
+          </span>
         </div>
       </div>
     </article>
+    </a>
   );
 }
 
@@ -242,33 +302,79 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   );
 }
 
-export default function VehicleGrid() {
+interface VehicleGridProps {
+  defaultListingType?: string;
+}
+
+function readUrlState(defaultListingType?: string) {
+  if (typeof window === 'undefined') {
+    return {
+      filters: defaultListingType ? { listingType: defaultListingType } as VehicleFilters : {} as VehicleFilters,
+      page: 1,
+      sortBy: 'dueDate' as const,
+      sortOrder: 'asc' as const,
+    };
+  }
+  const sp = new URLSearchParams(window.location.search);
+  const filters: VehicleFilters = defaultListingType ? { listingType: defaultListingType } : {};
+  if (sp.get('status')) filters.status = sp.get('status')!;
+  if (sp.get('source')) filters.source = sp.get('source')!;
+  if (sp.get('fuel_type')) filters.fuelType = sp.get('fuel_type')!;
+  if (sp.get('year_min')) filters.yearMin = Number(sp.get('year_min'));
+  if (sp.get('price_min')) filters.priceMin = Number(sp.get('price_min'));
+  if (sp.get('price_max')) filters.priceMax = Number(sp.get('price_max'));
+  if (sp.get('search')) filters.search = sp.get('search')!;
+  if (sp.get('location')) filters.location = sp.get('location')!;
+  if (sp.get('listing_type')) filters.listingType = sp.get('listing_type')!;
+  if (sp.get('has_inspection') === 'true') filters.hasInspection = true;
+  if (sp.get('result_status')) filters.resultStatus = sp.get('result_status')!;
+
+  const sortByMap: Record<string, 'price' | 'year' | 'dueDate'> = {
+    price: 'price', year: 'year', dueDate: 'dueDate',
+  };
+
+  return {
+    filters,
+    page: Number(sp.get('p')) || 1,
+    sortBy: sortByMap[sp.get('sort') || ''] || 'dueDate',
+    sortOrder: (sp.get('dir') === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc',
+  };
+}
+
+export default function VehicleGrid({ defaultListingType }: VehicleGridProps = {}) {
+  const [initState] = useState(() => readUrlState(defaultListingType));
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<VehicleFilters>({});
+  const [filters, setFilters] = useState<VehicleFilters>(initState.filters);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [sortBy, setSortBy] = useState<'price' | 'year' | 'dueDate'>('dueDate');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [page, setPage] = useState(initState.page);
+  const [sortBy, setSortBy] = useState<'price' | 'year' | 'dueDate'>(initState.sortBy);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initState.sortOrder);
   const pageSize = 12;
 
   const buildQueryString = useCallback(
     (filters: VehicleFilters, page: number) => {
       const params = new URLSearchParams();
       params.set('page', String(page));
-      params.set('pageSize', String(pageSize));
-      params.set('sortBy', sortBy);
-      params.set('sortOrder', sortOrder);
+      params.set('limit', String(pageSize));
 
-      if (filters.search) params.set('search', filters.search);
-      if (filters.yearMin) params.set('yearMin', String(filters.yearMin));
-      if (filters.yearMax) params.set('yearMax', String(filters.yearMax));
-      if (filters.priceMin) params.set('priceMin', String(filters.priceMin));
-      if (filters.priceMax) params.set('priceMax', String(filters.priceMax));
-      if (filters.fuelType) params.set('fuelType', filters.fuelType);
-      if (filters.location) params.set('location', filters.location);
+      const sortByMapping: Record<string, string> = {
+        dueDate: 'due_date',
+        price: 'price',
+        year: 'year',
+      };
+      params.set('sort_by', sortByMapping[sortBy] || sortBy);
+      params.set('sort_dir', sortOrder);
+
+      if (filters.yearMin) params.set('year', String(filters.yearMin));
+      if (filters.priceMin) params.set('price_min', String(filters.priceMin));
+      if (filters.priceMax) params.set('price_max', String(filters.priceMax));
+      if (filters.fuelType) params.set('fuel_type', filters.fuelType);
       if (filters.status) params.set('status', filters.status);
+      if (filters.source) params.set('source', filters.source);
+      if (filters.listingType) params.set('listing_type', filters.listingType);
+      if (filters.hasInspection) params.set('has_inspection', 'true');
 
       return params.toString();
     },
@@ -289,13 +395,12 @@ export default function VehicleGrid() {
 
       const data: VehicleApiResponse = await response.json();
       setVehicles(data.data);
-      setTotal(data.total);
+      setTotal(data.pagination.total);
     } catch (err) {
       console.error('Failed to fetch vehicles:', err);
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다');
-      // Set demo data for development
-      setVehicles(getDemoVehicles());
-      setTotal(getDemoVehicles().length);
+      setVehicles([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -304,6 +409,29 @@ export default function VehicleGrid() {
   useEffect(() => {
     fetchVehicles();
   }, [fetchVehicles]);
+
+  // Sync state to URL so browser back button restores it
+  useEffect(() => {
+    const sp = new URLSearchParams();
+    if (page > 1) sp.set('p', String(page));
+    if (sortBy !== 'dueDate') sp.set('sort', sortBy);
+    if (sortOrder !== 'asc') sp.set('dir', sortOrder);
+    if (filters.status) sp.set('status', filters.status);
+    if (filters.source) sp.set('source', filters.source);
+    if (filters.fuelType) sp.set('fuel_type', filters.fuelType);
+    if (filters.yearMin) sp.set('year_min', String(filters.yearMin));
+    if (filters.priceMin) sp.set('price_min', String(filters.priceMin));
+    if (filters.priceMax) sp.set('price_max', String(filters.priceMax));
+    if (filters.search) sp.set('search', filters.search);
+    if (filters.location) sp.set('location', filters.location);
+    if (filters.listingType && filters.listingType !== defaultListingType) sp.set('listing_type', filters.listingType);
+    if (filters.hasInspection) sp.set('has_inspection', 'true');
+    if (filters.resultStatus) sp.set('result_status', filters.resultStatus);
+
+    const qs = sp.toString();
+    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState(null, '', newUrl);
+  }, [page, sortBy, sortOrder, filters, defaultListingType]);
 
   const handleFiltersChange = useCallback((newFilters: VehicleFilters) => {
     setFilters(newFilters);
@@ -406,7 +534,7 @@ export default function VehicleGrid() {
         {totalPages > 1 && !loading && (
           <div className="flex items-center justify-center gap-2 mt-8">
             <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={page === 1}
               className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -430,7 +558,7 @@ export default function VehicleGrid() {
                 return (
                   <button
                     key={pageNum}
-                    onClick={() => setPage(pageNum)}
+                    onClick={() => { setPage(pageNum); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                     className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
                       page === pageNum
                         ? 'bg-primary-600 text-white'
@@ -444,7 +572,7 @@ export default function VehicleGrid() {
             </div>
 
             <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               disabled={page === totalPages}
               className="btn btn-secondary px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -457,94 +585,4 @@ export default function VehicleGrid() {
       </div>
     </div>
   );
-}
-
-// Demo data for development
-function getDemoVehicles(): Vehicle[] {
-  return [
-    {
-      id: 1,
-      mgmtNumber: '2024-0001',
-      carNumber: '12가 3456',
-      modelName: '현대 그랜저 IG',
-      fuelType: 'gasoline',
-      transmission: 'automatic',
-      year: 2020,
-      price: 15800000,
-      location: '서울특별시',
-      organization: '한국도로공사',
-      dueDate: '2024-02-15',
-      status: 'active',
-    },
-    {
-      id: 2,
-      mgmtNumber: '2024-0002',
-      carNumber: '34나 5678',
-      modelName: '기아 K5 DL3',
-      fuelType: 'diesel',
-      transmission: 'automatic',
-      year: 2021,
-      price: 12500000,
-      location: '경기도 수원시',
-      organization: '수원시청',
-      dueDate: '2024-02-18',
-      status: 'active',
-    },
-    {
-      id: 3,
-      mgmtNumber: '2024-0003',
-      carNumber: '56다 7890',
-      modelName: '르노삼성 SM6',
-      fuelType: 'lpg',
-      transmission: 'automatic',
-      year: 2019,
-      price: 8900000,
-      location: '부산광역시',
-      organization: '부산항만공사',
-      dueDate: '2024-02-20',
-      status: 'upcoming',
-    },
-    {
-      id: 4,
-      mgmtNumber: '2024-0004',
-      carNumber: '78라 1234',
-      modelName: '쉐보레 말리부',
-      fuelType: 'gasoline',
-      transmission: 'automatic',
-      year: 2018,
-      price: 7200000,
-      location: '대전광역시',
-      organization: '한국철도공사',
-      dueDate: '2024-02-22',
-      status: 'active',
-    },
-    {
-      id: 5,
-      mgmtNumber: '2024-0005',
-      carNumber: '90마 5678',
-      modelName: '현대 아반떼 CN7',
-      fuelType: 'hybrid',
-      transmission: 'automatic',
-      year: 2022,
-      price: 18500000,
-      location: '인천광역시',
-      organization: '인천국제공항공사',
-      dueDate: '2024-02-25',
-      status: 'upcoming',
-    },
-    {
-      id: 6,
-      mgmtNumber: '2024-0006',
-      carNumber: '12바 9012',
-      modelName: '기아 니로 EV',
-      fuelType: 'electric',
-      transmission: 'automatic',
-      year: 2021,
-      price: 22000000,
-      location: '광주광역시',
-      organization: '한국전력공사',
-      dueDate: '2024-02-28',
-      status: 'active',
-    },
-  ];
 }

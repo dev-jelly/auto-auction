@@ -1,0 +1,61 @@
+---
+import Layout from '../layouts/Layout.astro';
+import StatsBar from '../components/islands/StatsBar';
+import VehicleGrid from '../components/islands/VehicleGrid';
+---
+
+<Layout title="경매 결과 - 공차경매">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Hero Section -->
+    <section class="mb-8">
+      <div class="card bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 sm:p-8 border-0">
+        <h1 class="text-2xl sm:text-3xl font-bold mb-2">경매 결과</h1>
+        <p class="text-blue-100 text-sm sm:text-base max-w-2xl">
+          과거 경매 결과를 확인하고, 낙찰가 추이를 파악하세요.
+          시장 가격 동향을 분석하여 현명한 입찰 전략을 수립하실 수 있습니다.
+        </p>
+        <div class="flex flex-wrap gap-4 mt-6">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-blue-200">낙찰가 데이터</p>
+              <p class="text-sm font-medium">실제 거래 가격</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-blue-200">가격 추이</p>
+              <p class="text-sm font-medium">시세 분석</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-blue-200">경매 이력</p>
+              <p class="text-sm font-medium">상세 기록</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Bar (React Island) -->
+    <StatsBar client:load />
+
+    <!-- Vehicle Grid (React Island) -->
+    <VehicleGrid client:load defaultListingType="completed" />
+  </div>
+</Layout>

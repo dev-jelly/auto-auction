@@ -42,4 +42,4 @@ COPY . .
 RUN npm run build 2>/dev/null || true
 
 # Run scraper
-CMD ["npx", "tsx", "scrape.ts"]
+CMD ["npx", "tsx", "src/index.ts"]

@@ -48,11 +48,21 @@ const { title, description = '공공기관 차량 경매 정보를 한눈에 확
           </a>
 
           <nav class="hidden md:flex items-center gap-6">
-            <a href="/" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+            <a href="/" class:list={[
+              "transition-colors",
+              Astro.url.pathname === "/"
+                ? "text-primary-600 dark:text-primary-400 font-semibold"
+                : "text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
+            ]}>
               차량 목록
             </a>
-            <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
-              경매 일정
+            <a href="/results" class:list={[
+              "transition-colors",
+              Astro.url.pathname === "/results"
+                ? "text-primary-600 dark:text-primary-400 font-semibold"
+                : "text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
+            ]}>
+              경매 결과
             </a>
             <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
               이용 안내

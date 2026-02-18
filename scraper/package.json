@@ -4,17 +4,16 @@
   "description": "Automart vehicle auction scraper",
   "main": "scrape.ts",
   "scripts": {
-    "scrape": "tsx scrape.ts",
+    "scrape": "tsx src/index.ts",
+    "scrape:legacy": "tsx scrape.ts",
     "build": "tsc",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
-    "playwright": "^1.57.0",
-    "pg": "^8.11.0"
+    "playwright": "^1.57.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/pg": "^8.10.0",
     "tsx": "^4.21.0",
     "typescript": "^5.3.0"
   }

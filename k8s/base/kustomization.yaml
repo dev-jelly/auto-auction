@@ -13,7 +13,8 @@ resources:
 - api/service.yaml
 - web/deployment.yaml
 - web/service.yaml
-- scraper/cronjob.yaml
+- scraper/cronjob-automart.yaml
+- scraper/cronjob-court-auction.yaml
 - ingress.yaml
 
 commonLabels:
