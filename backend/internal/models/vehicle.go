@@ -71,6 +71,7 @@ type VehicleListParams struct {
 	Page          int    `form:"page,default=1"`
 	Limit         int    `form:"limit,default=20"`
 	Year          *int   `form:"year"`
+	YearMax       *int   `form:"year_max"`
 	PriceMin      *int64 `form:"price_min"`
 	PriceMax      *int64 `form:"price_max"`
 	FuelType      string `form:"fuel_type"`

@@ -65,6 +65,12 @@ func (r *VehicleRepository) List(ctx context.Context, params models.VehicleListP
 		argNum++
 	}
 
+	if params.YearMax != nil {
+		conditions = append(conditions, fmt.Sprintf("v.year <= $%d", argNum))
+		args = append(args, *params.YearMax)
+		argNum++
+	}
+
 	if params.PriceMin != nil {
 		conditions = append(conditions, fmt.Sprintf("v.price >= $%d", argNum))
 		args = append(args, *params.PriceMin)

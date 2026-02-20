@@ -284,6 +284,18 @@ export default function VehicleDetail() {
   const displayPrice = isCompleted && vehicle.final_price ? vehicle.final_price : vehicle.price;
   const priceLabel = isCompleted && vehicle.final_price ? '낙찰가' : '예정가';
   const isCourtAuction = vehicle.source === 'court_auction';
+  const imageEntries = (vehicle.image_urls ?? []).map((url, index) => ({
+    url,
+    index,
+    label: vehicle.image_labels?.[index],
+  }));
+  const validImageEntries = imageEntries.filter((entry) => !failedImages.has(entry.index));
+  const selectedImageEntry =
+    validImageEntries.find((entry) => entry.index === selectedImageIndex) ?? validImageEntries[0];
+  const selectedVisibleIndex = Math.max(
+    0,
+    validImageEntries.findIndex((entry) => entry.index === selectedImageEntry?.index)
+  );
 
   return (
     <div className="space-y-6">
@@ -309,24 +321,32 @@ export default function VehicleDetail() {
         {/* Image section */}
         <div className="w-full lg:w-1/2 space-y-2">
           <div className="relative h-64 lg:h-80 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl flex items-center justify-center overflow-hidden group">
-            {vehicle.image_urls && vehicle.image_urls.filter((_, i) => !failedImages.has(i)).length > 0 ? (
+            {selectedImageEntry ? (
               <button
                 onClick={() => setLightboxOpen(true)}
                 className="relative w-full h-full cursor-zoom-in"
               >
                   <img
-                    src={vehicle.image_urls[selectedImageIndex]}
+                    src={selectedImageEntry.url}
                     alt={vehicle.model_name}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     onError={() => {
-                      setFailedImages((prev) => new Set(prev).add(selectedImageIndex));
-                      const nextValid = vehicle.image_urls!.findIndex((_, i) => i !== selectedImageIndex && !failedImages.has(i));
-                      if (nextValid !== -1) setSelectedImageIndex(nextValid);
+                      const failedIndex = selectedImageEntry.index;
+                      setFailedImages((prev) => {
+                        const next = new Set(prev);
+                        next.add(failedIndex);
+                        return next;
+                      });
+
+                      const nextEntry = validImageEntries.find((entry) => entry.index !== failedIndex);
+                      if (nextEntry) {
+                        setSelectedImageIndex(nextEntry.index);
+                      }
                     }}
                   />
-                  {vehicle.image_labels?.[selectedImageIndex] && (
+                  {selectedImageEntry.label && (
                     <div className="absolute bottom-0 left-0 right-0 p-3 bg-black/50 backdrop-blur-sm text-white text-sm font-medium">
-                      {vehicle.image_labels[selectedImageIndex]}
+                      {selectedImageEntry.label}
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -368,28 +388,31 @@ export default function VehicleDetail() {
               {vehicle.result_status || vehicle.status}
             </span>
           </div>
-          {vehicle.image_urls && vehicle.image_urls.filter((_, i) => !failedImages.has(i)).length > 1 && (
+          {validImageEntries.length > 1 && (
             <div className="grid grid-cols-4 gap-2">
-              {vehicle.image_urls.map((url, index) =>
-                failedImages.has(index) ? null : (
+              {validImageEntries.map((entry, visibleIndex) => (
                   <button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
+                    key={entry.index}
+                    onClick={() => setSelectedImageIndex(entry.index)}
                     className={`relative h-16 lg:h-20 rounded-lg overflow-hidden transition-all ${
-                      selectedImageIndex === index
+                      selectedImageEntry?.index === entry.index
                         ? 'ring-2 ring-primary-500 ring-offset-2 dark:ring-offset-gray-900'
                         : 'opacity-70 hover:opacity-100'
                     }`}
                   >
                     <img
-                      src={url}
-                      alt={`${vehicle.model_name} ${index + 1}`}
+                      src={entry.url}
+                      alt={`${vehicle.model_name} ${visibleIndex + 1}`}
                       className="w-full h-full object-cover"
-                      onError={() => setFailedImages((prev) => new Set(prev).add(index))}
+                      onError={() => setFailedImages((prev) => new Set(prev).add(entry.index))}
                     />
+                    {entry.label && (
+                      <div className="absolute inset-x-0 bottom-0 bg-black/55 px-1 py-0.5 text-[10px] leading-tight text-white truncate">
+                        {entry.label}
+                      </div>
+                    )}
                   </button>
-                )
-              )}
+                ))}
             </div>
           )}
         </div>
@@ -640,14 +663,19 @@ export default function VehicleDetail() {
       </div>
 
       {/* Image Lightbox */}
-      {vehicle.image_urls && vehicle.image_urls.filter((_, i) => !failedImages.has(i)).length > 0 && (
+      {validImageEntries.length > 0 && (
         <ImageLightbox
-          images={vehicle.image_urls.filter((_, i) => !failedImages.has(i))}
-          labels={vehicle.image_labels}
-          initialIndex={selectedImageIndex}
+          images={validImageEntries.map((entry) => entry.url)}
+          labels={validImageEntries.map((entry) => entry.label || '')}
+          initialIndex={selectedVisibleIndex}
           isOpen={lightboxOpen}
           onClose={() => setLightboxOpen(false)}
-          onNavigate={(index) => setSelectedImageIndex(index)}
+          onNavigate={(index) => {
+            const mapped = validImageEntries[index];
+            if (mapped) {
+              setSelectedImageIndex(mapped.index);
+            }
+          }}
         />
       )}
     </div>
