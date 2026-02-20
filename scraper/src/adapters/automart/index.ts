@@ -201,8 +201,9 @@ export class AutomartAdapter extends BaseAdapter {
           await this.page.goto(imageViewUrl, { timeout: 15000, waitUntil: 'domcontentloaded' });
           await this.wait(500);
 
-          const imageUrls = await this.page.evaluate(() => {
+          const imageData = await this.page.evaluate(() => {
             const urls: string[] = [];
+            const labels: string[] = [];
             // <li class='up'><a><span data-img="//image.automart.co.kr/...">label</span></a></li>
             // Only collect <li> with class containing 'up' — empty slots have no class
             for (const li of Array.from(document.querySelectorAll('li'))) {
@@ -214,13 +215,15 @@ export class AutomartAdapter extends BaseAdapter {
               if (!raw || raw === '//' || raw === '') continue;
               const url = raw.startsWith('http') ? raw : `https:${raw}`;
               urls.push(url);
+              labels.push((span.textContent || '').trim());
             }
-            return urls;
+            return { urls, labels };
           });
 
-          if (imageUrls.length > 0) {
-            item.imageUrls = imageUrls;
-            console.log(`    Found ${imageUrls.length} image(s) from gallery`);
+          if (imageData.urls.length > 0) {
+            item.imageUrls = imageData.urls;
+            item.imageLabels = imageData.labels.some(l => l) ? imageData.labels : undefined;
+            console.log(`    Found ${imageData.urls.length} image(s) from gallery`);
           } else if (detailData.fallbackImageUrls.length > 0) {
             // ImageView parsed 0 — use 3 main photos as safety net
             item.imageUrls = detailData.fallbackImageUrls;

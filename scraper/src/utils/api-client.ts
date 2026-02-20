@@ -26,6 +26,7 @@ export async function submitToAPI(items: AuctionItem[], apiUrl: string): Promise
       auction_count: item.auctionCount,
       status: item.status,
       image_urls: item.imageUrls,
+      image_labels: item.imageLabels,
       detail_url: item.detailUrl,
       organization: item.organization,
       location: item.location,

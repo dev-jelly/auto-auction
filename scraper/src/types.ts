@@ -28,6 +28,7 @@ export interface AuctionItem {
   organization?: string;
   detailUrl?: string;
   imageUrls?: string[];
+  imageLabels?: string[];
   inspectionReportUrl?: string;
   caseNumber?: string;
   courtName?: string;
