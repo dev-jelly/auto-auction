@@ -13,7 +13,9 @@ import (
 	"github.com/jelly/auto-auction/backend/internal/config"
 	"github.com/jelly/auto-auction/backend/internal/db"
 	"github.com/jelly/auto-auction/backend/internal/handlers"
+	"github.com/jelly/auto-auction/backend/internal/middleware"
 	"github.com/jelly/auto-auction/backend/internal/repository"
+	"github.com/jelly/auto-auction/backend/internal/services"
 )
 
 func main() {
@@ -29,10 +31,21 @@ func main() {
 
 	log.Println("Connected to PostgreSQL database")
 
+	// Initialize repositories
 	vehicleRepo := repository.NewVehicleRepository(pool)
+	userRepo := repository.NewUserRepository(pool)
+	favoritesRepo := repository.NewFavoritesRepository(pool)
 
+	// Initialize services
+	emailSvc := services.NewEmailService(cfg)
+
+	// Initialize handlers
 	vehicleHandler := handlers.NewVehicleHandler(vehicleRepo)
+	lookupHandler := handlers.NewLookupHandler(vehicleRepo)
 	statsHandler := handlers.NewStatsHandler(vehicleRepo)
+	authHandler := handlers.NewAuthHandler(userRepo, cfg, emailSvc)
+	favoritesHandler := handlers.NewFavoritesHandler(favoritesRepo, vehicleRepo)
+	marketMappingsHandler := handlers.NewMarketMappingsHandler(vehicleRepo)
 
 	router := gin.Default()
 
@@ -47,14 +60,41 @@ func main() {
 
 	api := router.Group("/api")
 	{
+		// Public vehicle routes
 		api.GET("/vehicles", vehicleHandler.ListVehicles)
+		api.GET("/vehicles/lookup/:carNumber", lookupHandler.LookupCarNumber)
 		api.GET("/vehicles/:id", vehicleHandler.GetVehicle)
 		api.GET("/vehicles/:id/history", vehicleHandler.GetVehicleHistory)
 		api.GET("/vehicles/:id/inspection", vehicleHandler.GetVehicleInspection)
-		api.POST("/vehicles/upsert", vehicleHandler.UpsertVehicle)
-		api.POST("/vehicles/inspection/upsert", vehicleHandler.UpsertVehicleInspection)
 		api.GET("/stats", statsHandler.GetStats)
 		api.GET("/sources", statsHandler.GetSources)
+		api.GET("/market-mappings", marketMappingsHandler.GetMappings)
+
+		// Public auth routes
+		api.POST("/auth/register", authHandler.Register)
+		api.POST("/auth/login", authHandler.Login)
+		api.POST("/auth/logout", authHandler.Logout)
+		api.POST("/auth/refresh", authHandler.Refresh)
+		api.GET("/auth/verify-email", authHandler.VerifyEmail)
+
+		// Protected routes
+		protected := api.Group("")
+		protected.Use(middleware.JWTMiddleware(cfg))
+		{
+			protected.GET("/auth/me", authHandler.Me)
+			protected.POST("/auth/resend-verification", authHandler.ResendVerification)
+			
+			// Favorites
+			protected.POST("/favorites/:vehicleId", favoritesHandler.Add)
+			protected.DELETE("/favorites/:vehicleId", favoritesHandler.Remove)
+			protected.GET("/favorites", favoritesHandler.List)
+			protected.POST("/favorites/check", favoritesHandler.Check)
+			protected.GET("/favorites/check/:vehicleId", favoritesHandler.IsFavorite)
+		}
+
+		// Admin routes (keep existing upsert)
+		api.POST("/vehicles/upsert", vehicleHandler.UpsertVehicle)
+		api.POST("/vehicles/inspection/upsert", vehicleHandler.UpsertVehicleInspection)
 	}
 
 	srv := &http.Server{

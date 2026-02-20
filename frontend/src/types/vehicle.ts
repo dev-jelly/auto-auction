@@ -39,6 +39,7 @@ export interface VehicleFilters {
   location?: string;
   status?: string;
   search?: string;
+  carNumber?: string;
   source?: string;
   listingType?: string;
   resultStatus?: string;
@@ -110,4 +111,73 @@ export interface VehicleApiResponse {
     total: number;
     total_pages: number;
   };
+}
+
+// Auth types
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  email_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  expires_in: number;
+  user: User;
+}
+
+export interface RegisterResponse {
+  email_verification_sent: boolean;
+  email: string;
+  user: User;
+  access_token: string;
+  expires_in: number;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface FavoritesCheckResponse {
+  favorites: Record<number, boolean>;
+}
+
+export interface MarketManufacturerMapping {
+  id: number;
+  internal_name: string;
+  korean_name: string;
+  is_foreign: boolean;
+  kcar_code?: string;
+  encar_name?: string;
+}
+
+export interface MarketFuelMapping {
+  id: number;
+  internal_name: string;
+  encar_name?: string;
+  kcar_code?: string;
+}
+
+export interface MarketModelMapping {
+  id: number;
+  internal_name: string;
+  manufacturer_korean: string;
+  encar_model_group?: string;
+  kcar_model_code?: string;
+}
+
+export interface MarketMappings {
+  manufacturers: MarketManufacturerMapping[];
+  fuel_types: MarketFuelMapping[];
+  models: MarketModelMapping[];
 }

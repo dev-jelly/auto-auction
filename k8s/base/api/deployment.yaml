@@ -31,6 +31,36 @@ spec:
               key: database-url
         - name: GIN_MODE
           value: "release"
+        - name: SMTP_HOST
+          valueFrom:
+            secretKeyRef:
+              name: auto-auction-secrets
+              key: smtp-host
+        - name: SMTP_PORT
+          valueFrom:
+            secretKeyRef:
+              name: auto-auction-secrets
+              key: smtp-port
+        - name: SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: auto-auction-secrets
+              key: smtp-user
+        - name: SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: auto-auction-secrets
+              key: smtp-password
+        - name: SMTP_FROM
+          valueFrom:
+            secretKeyRef:
+              name: auto-auction-secrets
+              key: smtp-from
+        - name: APP_BASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: auto-auction-secrets
+              key: app-base-url
         readinessProbe:
           httpGet:
             path: /health
