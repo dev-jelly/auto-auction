@@ -66,19 +66,21 @@ type VehicleUpsertRequest struct {
 }
 
 type VehicleListParams struct {
-	Page         int    `form:"page,default=1"`
-	Limit        int    `form:"limit,default=20"`
-	Year         *int   `form:"year"`
-	PriceMin     *int64 `form:"price_min"`
-	PriceMax     *int64 `form:"price_max"`
-	FuelType     string `form:"fuel_type"`
-	Status       string `form:"status"`
-	SortBy       string `form:"sort_by,default=created_at"`
-	SortDir      string `form:"sort_dir,default=desc"`
-	Source       string `form:"source"`
+	Page          int    `form:"page,default=1"`
+	Limit         int    `form:"limit,default=20"`
+	Year          *int   `form:"year"`
+	PriceMin      *int64 `form:"price_min"`
+	PriceMax      *int64 `form:"price_max"`
+	FuelType      string `form:"fuel_type"`
+	Status        string `form:"status"`
+	SortBy        string `form:"sort_by,default=created_at"`
+	SortDir       string `form:"sort_dir,default=desc"`
+	Source        string `form:"source"`
 	ResultStatus  string `form:"result_status"`
 	ListingType   string `form:"listing_type"`
 	HasInspection *bool  `form:"has_inspection"`
+	Search        string `form:"search"`
+	CarNumber     string `form:"car_number"`
 }
 
 type VehicleListResponse struct {
@@ -172,4 +174,50 @@ type VehicleInspectionUpsertRequest struct {
 	DriveType           *string         `json:"drive_type,omitempty"`
 	ReportData          json.RawMessage `json:"report_data" binding:"required"`
 	ReportURL           *string         `json:"report_url,omitempty"`
+}
+
+type VehicleExternalInfo struct {
+	ID        int64           `json:"id"`
+	CarNumber string          `json:"car_number"`
+	Data      json.RawMessage `json:"data"`
+	Source    string          `json:"source"`
+	FetchedAt time.Time      `json:"fetched_at"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
+}
+
+type CarNumberLookupResponse struct {
+	Vehicles     []Vehicle            `json:"vehicles"`
+	ExternalInfo *VehicleExternalInfo  `json:"external_info,omitempty"`
+	Car365URL    string               `json:"car365_url"`
+}
+
+type MarketManufacturerMapping struct {
+	ID           int    `json:"id"`
+	InternalName string `json:"internal_name"`
+	KoreanName   string `json:"korean_name"`
+	IsForeign    bool   `json:"is_foreign"`
+	KcarCode     *string `json:"kcar_code,omitempty"`
+	EncarName    *string `json:"encar_name,omitempty"`
+}
+
+type MarketFuelMapping struct {
+	ID           int    `json:"id"`
+	InternalName string `json:"internal_name"`
+	EncarName    *string `json:"encar_name,omitempty"`
+	KcarCode     *string `json:"kcar_code,omitempty"`
+}
+
+type MarketModelMapping struct {
+	ID                 int    `json:"id"`
+	InternalName       string `json:"internal_name"`
+	ManufacturerKorean string `json:"manufacturer_korean"`
+	EncarModelGroup    *string `json:"encar_model_group,omitempty"`
+	KcarModelCode      *string `json:"kcar_model_code,omitempty"`
+}
+
+type MarketMappings struct {
+	Manufacturers []MarketManufacturerMapping `json:"manufacturers"`
+	FuelTypes     []MarketFuelMapping         `json:"fuel_types"`
+	Models        []MarketModelMapping        `json:"models"`
 }

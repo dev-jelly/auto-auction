@@ -115,6 +115,18 @@ func (r *VehicleRepository) List(ctx context.Context, params models.VehicleListP
 		}
 	}
 
+	if params.CarNumber != "" {
+		conditions = append(conditions, fmt.Sprintf("v.car_number ILIKE $%d", argNum))
+		args = append(args, "%"+params.CarNumber+"%")
+		argNum++
+	}
+
+	if params.Search != "" {
+		conditions = append(conditions, fmt.Sprintf("(v.model_name ILIKE $%d OR v.mgmt_number ILIKE $%d OR v.car_number ILIKE $%d OR v.manufacturer ILIKE $%d)", argNum, argNum, argNum, argNum))
+		args = append(args, "%"+params.Search+"%")
+		argNum++
+	}
+
 	whereClause := ""
 	if len(conditions) > 0 {
 		whereClause = "WHERE " + strings.Join(conditions, " AND ")
@@ -538,6 +550,67 @@ func (r *VehicleRepository) GetInspectionByVehicleID(ctx context.Context, vehicl
 	return &ins, nil
 }
 
+func (r *VehicleRepository) FindByCarNumber(ctx context.Context, carNumber string) ([]models.Vehicle, error) {
+	query := fmt.Sprintf(`SELECT %s FROM vehicles WHERE car_number = $1 ORDER BY created_at DESC`, vehicleColumns)
+
+	rows, err := r.pool.Query(ctx, query, carNumber)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find vehicles by car number: %w", err)
+	}
+	defer rows.Close()
+
+	vehicles := make([]models.Vehicle, 0)
+	for rows.Next() {
+		v, err := scanVehicleFromRows(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan vehicle: %w", err)
+		}
+		vehicles = append(vehicles, v)
+	}
+
+	return vehicles, nil
+}
+
+func (r *VehicleRepository) GetExternalInfo(ctx context.Context, carNumber string) (*models.VehicleExternalInfo, error) {
+	query := `SELECT id, car_number, data, source, fetched_at, created_at, updated_at
+		FROM vehicle_external_info WHERE car_number = $1 ORDER BY fetched_at DESC LIMIT 1`
+
+	var info models.VehicleExternalInfo
+	err := r.pool.QueryRow(ctx, query, carNumber).Scan(
+		&info.ID, &info.CarNumber, &info.Data, &info.Source,
+		&info.FetchedAt, &info.CreatedAt, &info.UpdatedAt,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to get external info: %w", err)
+	}
+
+	return &info, nil
+}
+
+func (r *VehicleRepository) UpsertExternalInfo(ctx context.Context, info models.VehicleExternalInfo) (*models.VehicleExternalInfo, error) {
+	query := `INSERT INTO vehicle_external_info (car_number, data, source, fetched_at, created_at, updated_at)
+		VALUES ($1, $2, $3, NOW(), NOW(), NOW())
+		ON CONFLICT (car_number, source) DO UPDATE SET
+			data = EXCLUDED.data,
+			fetched_at = NOW(),
+			updated_at = NOW()
+		RETURNING id, car_number, data, source, fetched_at, created_at, updated_at`
+
+	var result models.VehicleExternalInfo
+	err := r.pool.QueryRow(ctx, query, info.CarNumber, info.Data, info.Source).Scan(
+		&result.ID, &result.CarNumber, &result.Data, &result.Source,
+		&result.FetchedAt, &result.CreatedAt, &result.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upsert external info: %w", err)
+	}
+
+	return &result, nil
+}
+
 func (r *VehicleRepository) UpsertInspection(ctx context.Context, req models.VehicleInspectionUpsertRequest) (*models.VehicleInspection, error) {
 	// Resolve vehicle_id from source_id
 	var vehicleID int64
@@ -600,4 +673,77 @@ func (r *VehicleRepository) UpsertInspection(ctx context.Context, req models.Veh
 	}
 
 	return &ins, nil
+}
+
+func (r *VehicleRepository) GetMarketMappings(ctx context.Context) (*models.MarketMappings, error) {
+	result := &models.MarketMappings{
+		Manufacturers: make([]models.MarketManufacturerMapping, 0),
+		FuelTypes:     make([]models.MarketFuelMapping, 0),
+		Models:        make([]models.MarketModelMapping, 0),
+	}
+
+	// Manufacturers
+	rows, err := r.pool.Query(ctx, `
+		SELECT id, internal_name, korean_name, is_foreign, kcar_code, encar_name
+		FROM market_manufacturer_mappings
+		ORDER BY id
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query manufacturer mappings: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var m models.MarketManufacturerMapping
+		if err := rows.Scan(&m.ID, &m.InternalName, &m.KoreanName, &m.IsForeign, &m.KcarCode, &m.EncarName); err != nil {
+			return nil, fmt.Errorf("failed to scan manufacturer mapping: %w", err)
+		}
+		result.Manufacturers = append(result.Manufacturers, m)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating manufacturer mappings: %w", err)
+	}
+
+	// Fuel types
+	fuelRows, err := r.pool.Query(ctx, `
+		SELECT id, internal_name, encar_name, kcar_code
+		FROM market_fuel_mappings
+		ORDER BY id
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query fuel mappings: %w", err)
+	}
+	defer fuelRows.Close()
+	for fuelRows.Next() {
+		var m models.MarketFuelMapping
+		if err := fuelRows.Scan(&m.ID, &m.InternalName, &m.EncarName, &m.KcarCode); err != nil {
+			return nil, fmt.Errorf("failed to scan fuel mapping: %w", err)
+		}
+		result.FuelTypes = append(result.FuelTypes, m)
+	}
+	if err := fuelRows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating fuel mappings: %w", err)
+	}
+
+	// Models
+	modelRows, err := r.pool.Query(ctx, `
+		SELECT id, internal_name, manufacturer_korean, encar_model_group, kcar_model_code
+		FROM market_model_mappings
+		ORDER BY id
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query model mappings: %w", err)
+	}
+	defer modelRows.Close()
+	for modelRows.Next() {
+		var m models.MarketModelMapping
+		if err := modelRows.Scan(&m.ID, &m.InternalName, &m.ManufacturerKorean, &m.EncarModelGroup, &m.KcarModelCode); err != nil {
+			return nil, fmt.Errorf("failed to scan model mapping: %w", err)
+		}
+		result.Models = append(result.Models, m)
+	}
+	if err := modelRows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating model mappings: %w", err)
+	}
+
+	return result, nil
 }

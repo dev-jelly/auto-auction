@@ -1,3 +1,4 @@
+import FavoriteButton from './FavoriteButton';
 import { useState, useEffect, useCallback } from 'react';
 import type { Vehicle, VehicleFilters, VehicleApiResponse } from '../../types/vehicle';
 import FilterSidebar from './FilterSidebar';
@@ -143,6 +144,9 @@ function VehicleCard({ vehicle }: VehicleCardProps) {
             </svg>
           </span>
         )}
+        <div className="absolute bottom-3 left-3">
+          <FavoriteButton vehicleId={vehicle.id} size="sm" />
+        </div>
       </div>
 
       <div className="p-4">
@@ -324,6 +328,7 @@ function readUrlState(defaultListingType?: string) {
   if (sp.get('price_min')) filters.priceMin = Number(sp.get('price_min'));
   if (sp.get('price_max')) filters.priceMax = Number(sp.get('price_max'));
   if (sp.get('search')) filters.search = sp.get('search')!;
+  if (sp.get('car_number')) filters.carNumber = sp.get('car_number')!;
   if (sp.get('location')) filters.location = sp.get('location')!;
   if (sp.get('listing_type')) filters.listingType = sp.get('listing_type')!;
   if (sp.get('has_inspection') === 'true') filters.hasInspection = true;
@@ -375,6 +380,8 @@ export default function VehicleGrid({ defaultListingType }: VehicleGridProps = {
       if (filters.source) params.set('source', filters.source);
       if (filters.listingType) params.set('listing_type', filters.listingType);
       if (filters.hasInspection) params.set('has_inspection', 'true');
+      if (filters.search) params.set('search', filters.search);
+      if (filters.carNumber) params.set('car_number', filters.carNumber);
 
       return params.toString();
     },
@@ -423,6 +430,7 @@ export default function VehicleGrid({ defaultListingType }: VehicleGridProps = {
     if (filters.priceMin) sp.set('price_min', String(filters.priceMin));
     if (filters.priceMax) sp.set('price_max', String(filters.priceMax));
     if (filters.search) sp.set('search', filters.search);
+    if (filters.carNumber) sp.set('car_number', filters.carNumber);
     if (filters.location) sp.set('location', filters.location);
     if (filters.listingType && filters.listingType !== defaultListingType) sp.set('listing_type', filters.listingType);
     if (filters.hasInspection) sp.set('has_inspection', 'true');

@@ -3,6 +3,8 @@ import { createBrowser } from './utils/browser';
 import { submitToAPI, submitInspectionReports } from './utils/api-client';
 import { ScraperAdapter, AdapterConfig, AuctionItem } from './types';
 import { AutomartAdapter } from './adapters/automart';
+import { CourtAuctionAdapter } from './adapters/court-auction';
+import { OnbidAdapter } from './adapters/onbid';
 
 /**
  * Load adapter by source name
@@ -11,11 +13,10 @@ function loadAdapter(source: string): ScraperAdapter {
   switch (source.toLowerCase()) {
     case 'automart':
       return new AutomartAdapter();
-    // Future adapters can be added here
-    // case 'court_auction':
-    //   return new CourtAuctionAdapter();
-    // case 'onbid':
-    //   return new OnbidAdapter();
+    case 'court_auction':
+      return new CourtAuctionAdapter();
+    case 'onbid':
+      return new OnbidAdapter();
     default:
       throw new Error(`Unknown scraper source: ${source}`);
   }

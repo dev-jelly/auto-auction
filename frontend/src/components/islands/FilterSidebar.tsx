@@ -182,6 +182,19 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
             </div>
           </div>
 
+          {/* Car Number */}
+          <div className="mb-6">
+            <label htmlFor="carNumber" className="label">차량번호</label>
+            <input
+              type="text"
+              id="carNumber"
+              placeholder="예: 12가3456"
+              value={localFilters.carNumber || ''}
+              onChange={(e) => handleFilterChange('carNumber', e.target.value)}
+              className="input"
+            />
+          </div>
+
           {/* Status */}
           <div className="mb-6">
             <label className="label">경매 상태</label>

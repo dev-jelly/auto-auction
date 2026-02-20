@@ -15,6 +15,7 @@ resources:
 - web/service.yaml
 - scraper/cronjob-automart.yaml
 - scraper/cronjob-court-auction.yaml
+- scraper/cronjob-onbid.yaml
 - ingress.yaml
 
 commonLabels:

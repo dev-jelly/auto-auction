@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import StatsBar from '../components/islands/StatsBar';
+import CarNumberSearchBar from '../components/islands/CarNumberSearchBar';
 import VehicleGrid from '../components/islands/VehicleGrid';
 ---
 
@@ -54,6 +55,9 @@ import VehicleGrid from '../components/islands/VehicleGrid';
 
     <!-- Stats Bar (React Island) -->
     <StatsBar client:load />
+
+    <!-- Car Number Search Bar -->
+    <CarNumberSearchBar client:load />
 
     <!-- Vehicle Grid (React Island) -->
     <VehicleGrid client:load />

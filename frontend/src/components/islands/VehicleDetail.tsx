@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Vehicle, AuctionHistoryEntry, VehicleInspection } from '../../types/vehicle';
+import type { Vehicle, AuctionHistoryEntry, VehicleInspection, MarketMappings } from '../../types/vehicle';
 import InspectionReport from './InspectionReport';
+import ImageLightbox from './ImageLightbox';
+import CopyToLLMButton from './CopyToLLMButton';
+import MarketSearchButtons from './MarketSearchButtons';
+import FavoriteButton from './FavoriteButton';
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('ko-KR').format(price);
@@ -199,6 +203,8 @@ export default function VehicleDetail() {
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [marketMappings, setMarketMappings] = useState<MarketMappings | null>(null);
 
   const fetchData = useCallback(async () => {
     const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -216,10 +222,11 @@ export default function VehicleDetail() {
     setNotFound(false);
 
     try {
-      const [vehicleRes, historyRes, inspectionRes] = await Promise.all([
+      const [vehicleRes, historyRes, inspectionRes, mappingsRes] = await Promise.all([
         fetch(`/api/vehicles/${vehicleId}`),
         fetch(`/api/vehicles/${vehicleId}/history`),
         fetch(`/api/vehicles/${vehicleId}/inspection`),
+        fetch('/api/market-mappings'),
       ]);
 
       if (vehicleRes.status === 404) {
@@ -243,6 +250,11 @@ export default function VehicleDetail() {
       if (inspectionRes.ok) {
         const inspectionData: VehicleInspection = await inspectionRes.json();
         setInspection(inspectionData);
+      }
+
+      if (mappingsRes.ok) {
+        const mappingsData: MarketMappings = await mappingsRes.json();
+        setMarketMappings(mappingsData);
       }
     } catch (err) {
       console.error('Failed to fetch vehicle:', err);
@@ -296,18 +308,30 @@ export default function VehicleDetail() {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Image section */}
         <div className="w-full lg:w-1/2 space-y-2">
-          <div className="relative h-64 lg:h-80 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl flex items-center justify-center overflow-hidden">
+          <div className="relative h-64 lg:h-80 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl flex items-center justify-center overflow-hidden group">
             {vehicle.image_urls && vehicle.image_urls.filter((_, i) => !failedImages.has(i)).length > 0 ? (
-              <img
-                src={vehicle.image_urls[selectedImageIndex]}
-                alt={vehicle.model_name}
-                className="w-full h-full object-cover transition-opacity duration-300"
-                onError={() => {
-                  setFailedImages((prev) => new Set(prev).add(selectedImageIndex));
-                  const nextValid = vehicle.image_urls!.findIndex((_, i) => i !== selectedImageIndex && !failedImages.has(i));
-                  if (nextValid !== -1) setSelectedImageIndex(nextValid);
-                }}
-              />
+              <button
+                onClick={() => setLightboxOpen(true)}
+                className="relative w-full h-full cursor-zoom-in"
+              >
+                <img
+                  src={vehicle.image_urls[selectedImageIndex]}
+                  alt={vehicle.model_name}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  onError={() => {
+                    setFailedImages((prev) => new Set(prev).add(selectedImageIndex));
+                    const nextValid = vehicle.image_urls!.findIndex((_, i) => i !== selectedImageIndex && !failedImages.has(i));
+                    if (nextValid !== -1) setSelectedImageIndex(nextValid);
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <div className="p-2 rounded-full bg-white/90 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
             ) : (
               <svg
                 className="w-24 h-24 text-gray-400 dark:text-gray-500"
@@ -452,24 +476,47 @@ export default function VehicleDetail() {
             </div>
           </div>
 
-          {vehicle.detail_url && (
-            <a
-              href={vehicle.detail_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-primary inline-flex items-center gap-2 mt-4"
-            >
-              원본 페이지에서 보기
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
-            </a>
-          )}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {vehicle.detail_url && (
+              <a
+                href={vehicle.detail_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary inline-flex items-center gap-2"
+              >
+                원본 페이지에서 보기
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+            )}
+            <FavoriteButton vehicleId={vehicle.id} size="md" showLabel />
+            <CopyToLLMButton vehicle={vehicle} history={history} inspection={inspection} />
+            <MarketSearchButtons vehicle={vehicle} mappings={marketMappings} />
+            {vehicle.car_number && (
+              <a
+                href={`https://www.car365.go.kr/acat/catIntgVhclHist.do?carNo=${encodeURIComponent(vehicle.car_number)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary inline-flex items-center gap-2"
+              >
+                자동차365 이력조회
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
@@ -583,6 +630,17 @@ export default function VehicleDetail() {
           </div>
         )}
       </div>
+
+      {/* Image Lightbox */}
+      {vehicle.image_urls && vehicle.image_urls.filter((_, i) => !failedImages.has(i)).length > 0 && (
+        <ImageLightbox
+          images={vehicle.image_urls.filter((_, i) => !failedImages.has(i))}
+          initialIndex={selectedImageIndex}
+          isOpen={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          onNavigate={(index) => setSelectedImageIndex(index)}
+        />
+      )}
     </div>
   );
 }

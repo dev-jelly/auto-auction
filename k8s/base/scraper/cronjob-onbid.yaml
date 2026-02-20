@@ -1,25 +1,25 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: scraper-court-auction
+  name: scraper-onbid
   namespace: auto-auction
   labels:
     app: scraper
-    scraper-source: court-auction
+    scraper-source: onbid
 spec:
-  schedule: "30 */6 * * *"
+  schedule: "15 */6 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
       backoffLimit: 3
-      activeDeadlineSeconds: 1800
+      activeDeadlineSeconds: 600
       template:
         metadata:
           labels:
             app: scraper
-            scraper-source: court-auction
+            scraper-source: onbid
         spec:
           restartPolicy: OnFailure
           nodeSelector:
@@ -30,17 +30,21 @@ spec:
             imagePullPolicy: Never
             env:
             - name: SCRAPER_SOURCE
-              value: "court_auction"
-            - name: SCRAPE_INCLUDE_COMPLETED
-              value: "true"
+              value: "onbid"
             - name: SCRAPE_MAX_PAGES
-              value: "20"
+              value: "10"
+            - name: ONBID_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: auto-auction-secrets
+                  key: onbid-api-key
+                  optional: true
             - name: API_URL
               value: "http://auto-auction-api.auto-auction.svc.cluster.local"
             resources:
               requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
                 memory: "512Mi"
                 cpu: "250m"
-              limits:
-                memory: "1Gi"
-                cpu: "500m"

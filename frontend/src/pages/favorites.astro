@@ -1,0 +1,20 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FavoritesGrid from '../components/islands/FavoritesGrid';
+import AuthModal from '../components/islands/AuthModal';
+
+const title = '즐겨찾기 - 자동차 경매';
+---
+
+<Layout title={title}>
+  <main class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">즐겨찾기</h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">찜해둔 차량을 확인해보세요</p>
+      </div>
+      
+      <FavoritesGrid client:load />
+    </div>
+  </main>
+</Layout>
