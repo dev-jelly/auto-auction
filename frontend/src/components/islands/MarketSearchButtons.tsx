@@ -139,6 +139,17 @@ function buildKcarUrl(vehicle: Vehicle, mappings?: MarketMappings | null): strin
     cond.wr_lt_mfg_dt = `${vehicle.year + 1}12`;
   }
 
+  if (vehicle.model_name) {
+    let cleanModel = vehicle.model_name.replace(/\s*\(.*?\)\s*$/g, '').trim();
+    const koMfr = normalizeManufacturer(vehicle.manufacturer, mappings);
+    if (koMfr && cleanModel.includes(koMfr)) {
+      cleanModel = cleanModel.replace(koMfr, '').trim();
+    }
+    if (cleanModel) {
+      cond.wr_sh_keyword = cleanModel;
+    }
+  }
+
   let fuelCodes: string[] | undefined;
   if (mappings && vehicle.fuel_type) {
     const fuelMapping = mappings.fuel_types.find(
