@@ -27,10 +27,11 @@ export default function ImageLightbox({ images, labels, initialIndex, isOpen, on
     }
   }, [isOpen, initialIndex]);
 
-  // Sync with parent
   useEffect(() => {
-    onNavigate(currentIndex);
-  }, [currentIndex, onNavigate]);
+    if (isOpen) {
+      onNavigate(currentIndex);
+    }
+  }, [currentIndex, onNavigate, isOpen]);
 
   // Keyboard navigation
   useEffect(() => {

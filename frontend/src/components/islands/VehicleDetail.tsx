@@ -290,6 +290,13 @@ export default function VehicleDetail() {
     label: vehicle.image_labels?.[index],
   }));
   const validImageEntries = imageEntries.filter((entry) => !failedImages.has(entry.index));
+  const handleLightboxNavigate = useCallback((index: number) => {
+    const mapped = validImageEntries[index];
+    if (mapped) {
+      setSelectedImageIndex(mapped.index);
+    }
+  }, [validImageEntries]);
+
   const selectedImageEntry =
     validImageEntries.find((entry) => entry.index === selectedImageIndex) ?? validImageEntries[0];
   const selectedVisibleIndex = Math.max(
@@ -327,6 +334,7 @@ export default function VehicleDetail() {
                 className="relative w-full h-full cursor-zoom-in"
               >
                   <img
+                    key={selectedImageEntry.index}
                     src={selectedImageEntry.url}
                     alt={vehicle.model_name}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -663,19 +671,14 @@ export default function VehicleDetail() {
       </div>
 
       {/* Image Lightbox */}
-      {validImageEntries.length > 0 && (
+      {validImageEntries.length > 0 && lightboxOpen && (
         <ImageLightbox
           images={validImageEntries.map((entry) => entry.url)}
           labels={validImageEntries.map((entry) => entry.label || '')}
           initialIndex={selectedVisibleIndex}
           isOpen={lightboxOpen}
           onClose={() => setLightboxOpen(false)}
-          onNavigate={(index) => {
-            const mapped = validImageEntries[index];
-            if (mapped) {
-              setSelectedImageIndex(mapped.index);
-            }
-          }}
+          onNavigate={handleLightboxNavigate}
         />
       )}
     </div>
