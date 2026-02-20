@@ -2,13 +2,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface ImageLightboxProps {
   images: string[];
+  labels?: string[];
   initialIndex: number;
   isOpen: boolean;
   onClose: () => void;
   onNavigate: (index: number) => void;
 }
 
-export default function ImageLightbox({ images, initialIndex, isOpen, onClose, onNavigate }: ImageLightboxProps) {
+export default function ImageLightbox({ images, labels, initialIndex, isOpen, onClose, onNavigate }: ImageLightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -162,20 +163,20 @@ export default function ImageLightbox({ images, initialIndex, isOpen, onClose, o
         <>
           <button
             onClick={(e) => { e.stopPropagation(); navigatePrev(); }}
-            className="absolute left-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="absolute left-4 z-10 p-4 rounded-full bg-white/20 hover:bg-white/40 text-white transition-all hover:scale-110 active:scale-95"
             aria-label="이전 이미지"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); navigateNext(); }}
-            className="absolute right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="absolute right-4 z-10 p-4 rounded-full bg-white/20 hover:bg-white/40 text-white transition-all hover:scale-110 active:scale-95"
             aria-label="다음 이미지"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </>
@@ -195,23 +196,30 @@ export default function ImageLightbox({ images, initialIndex, isOpen, onClose, o
 
       {/* Image */}
       <div
-        className="relative max-w-[95vw] max-h-[85vh] overflow-hidden"
+        className="relative max-w-[95vw] max-h-[85vh] overflow-hidden flex flex-col items-center"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <img
-          ref={imageRef}
-          src={images[currentIndex]}
-          alt={`Image ${currentIndex + 1}`}
-          className={`max-w-full max-h-[85vh] object-contain transition-transform duration-200 ${isDragging ? 'cursor-grabbing' : zoom > 1 ? 'cursor-grab' : 'cursor-default'}`}
-          style={{
-            transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
-          }}
-          onWheel={handleZoom}
-          onMouseDown={handleMouseDown}
-          draggable={false}
-          onClick={(e) => e.stopPropagation()}
-        />
+        <div className="relative">
+          <img
+            ref={imageRef}
+            src={images[currentIndex]}
+            alt={`Image ${currentIndex + 1}`}
+            className={`max-w-full max-h-[85vh] object-contain transition-transform duration-200 ${isDragging ? 'cursor-grabbing' : zoom > 1 ? 'cursor-grab' : 'cursor-default'}`}
+            style={{
+              transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
+            }}
+            onWheel={handleZoom}
+            onMouseDown={handleMouseDown}
+            draggable={false}
+            onClick={(e) => e.stopPropagation()}
+          />
+          {labels?.[currentIndex] && zoom === 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-black/60 backdrop-blur-md text-white font-medium text-center pointer-events-none border border-white/10">
+              {labels[currentIndex]}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Thumbnail strip */}

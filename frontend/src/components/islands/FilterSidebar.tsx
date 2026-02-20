@@ -47,10 +47,20 @@ const PRICE_RANGES = [
   { value: '3000+', min: 30000000, max: undefined, label: '3,000만원 이상' },
 ];
 
+const MILEAGE_RANGES = [
+  { value: '', min: undefined, max: undefined, label: '전체' },
+  { value: '0-30000', min: 0, max: 30000, label: '3만km 이하' },
+  { value: '30000-60000', min: 30000, max: 60000, label: '3~6만km' },
+  { value: '60000-100000', min: 60000, max: 100000, label: '6~10만km' },
+  { value: '100000-150000', min: 100000, max: 150000, label: '10~15만km' },
+  { value: '150000+', min: 150000, max: undefined, label: '15만km 이상' },
+];
+
 export default function FilterSidebar({ filters, onFiltersChange }: FilterSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState<VehicleFilters>(filters);
   const [selectedPriceRange, setSelectedPriceRange] = useState('');
+  const [selectedMileageRange, setSelectedMileageRange] = useState('');
 
   useEffect(() => {
     setLocalFilters(filters);
@@ -80,6 +90,22 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
     [localFilters]
   );
 
+  const handleMileageRangeChange = useCallback(
+    (rangeValue: string) => {
+      setSelectedMileageRange(rangeValue);
+      const range = MILEAGE_RANGES.find((r) => r.value === rangeValue);
+      if (range) {
+        const newFilters = {
+          ...localFilters,
+          mileageMin: range.min,
+          mileageMax: range.max,
+        };
+        setLocalFilters(newFilters);
+      }
+    },
+    [localFilters]
+  );
+
   const handleApplyFilters = useCallback(() => {
     onFiltersChange(localFilters);
     setIsOpen(false);
@@ -89,6 +115,7 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
     const emptyFilters: VehicleFilters = {};
     setLocalFilters(emptyFilters);
     setSelectedPriceRange('');
+    setSelectedMileageRange('');
     onFiltersChange(emptyFilters);
   }, [onFiltersChange]);
 
@@ -293,6 +320,31 @@ export default function FilterSidebar({ filters, onFiltersChange }: FilterSideba
                     value={range.value}
                     checked={selectedPriceRange === range.value}
                     onChange={(e) => handlePriceRangeChange(e.target.value)}
+                    className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                    {range.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Mileage Range */}
+          <div className="mb-6">
+            <label className="label">주행거리</label>
+            <div className="space-y-2">
+              {MILEAGE_RANGES.map((range) => (
+                <label
+                  key={range.value}
+                  className="flex items-center gap-2 cursor-pointer group"
+                >
+                  <input
+                    type="radio"
+                    name="mileageRange"
+                    value={range.value}
+                    checked={selectedMileageRange === range.value}
+                    onChange={(e) => handleMileageRangeChange(e.target.value)}
                     className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">

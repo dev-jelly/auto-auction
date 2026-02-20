@@ -22,7 +22,7 @@ func NewVehicleRepository(pool *pgxpool.Pool) *VehicleRepository {
 
 var vehicleColumns = `id, mgmt_number, car_number, manufacturer, model_name, fuel_type,
 	transmission, year, mileage, price, min_bid_price, location,
-	organization, due_date, auction_count, status, image_urls,
+	organization, due_date, auction_count, status, image_urls, image_labels,
 	detail_url, source, source_id, final_price, result_status, result_date,
 	case_number, court_name, property_type, created_at, updated_at`
 
@@ -32,7 +32,7 @@ func scanVehicle(row pgx.Row) (*models.Vehicle, error) {
 		&v.ID, &v.MgmtNumber, &v.CarNumber, &v.Manufacturer, &v.ModelName,
 		&v.FuelType, &v.Transmission, &v.Year, &v.Mileage, &v.Price,
 		&v.MinBidPrice, &v.Location, &v.Organization, &v.DueDate,
-		&v.AuctionCount, &v.Status, &v.ImageURLs, &v.DetailURL,
+		&v.AuctionCount, &v.Status, &v.ImageURLs, &v.ImageLabels, &v.DetailURL,
 		&v.Source, &v.SourceID, &v.FinalPrice, &v.ResultStatus, &v.ResultDate,
 		&v.CaseNumber, &v.CourtName, &v.PropertyType,
 		&v.CreatedAt, &v.UpdatedAt,
@@ -46,7 +46,7 @@ func scanVehicleFromRows(rows pgx.Rows) (models.Vehicle, error) {
 		&v.ID, &v.MgmtNumber, &v.CarNumber, &v.Manufacturer, &v.ModelName,
 		&v.FuelType, &v.Transmission, &v.Year, &v.Mileage, &v.Price,
 		&v.MinBidPrice, &v.Location, &v.Organization, &v.DueDate,
-		&v.AuctionCount, &v.Status, &v.ImageURLs, &v.DetailURL,
+		&v.AuctionCount, &v.Status, &v.ImageURLs, &v.ImageLabels, &v.DetailURL,
 		&v.Source, &v.SourceID, &v.FinalPrice, &v.ResultStatus, &v.ResultDate,
 		&v.CaseNumber, &v.CourtName, &v.PropertyType,
 		&v.CreatedAt, &v.UpdatedAt,
@@ -74,6 +74,18 @@ func (r *VehicleRepository) List(ctx context.Context, params models.VehicleListP
 	if params.PriceMax != nil {
 		conditions = append(conditions, fmt.Sprintf("v.price <= $%d", argNum))
 		args = append(args, *params.PriceMax)
+		argNum++
+	}
+
+	if params.MileageMin != nil {
+		conditions = append(conditions, fmt.Sprintf("v.mileage >= $%d", argNum))
+		args = append(args, *params.MileageMin)
+		argNum++
+	}
+
+	if params.MileageMax != nil {
+		conditions = append(conditions, fmt.Sprintf("v.mileage <= $%d", argNum))
+		args = append(args, *params.MileageMax)
 		argNum++
 	}
 
@@ -170,7 +182,7 @@ func (r *VehicleRepository) List(ctx context.Context, params models.VehicleListP
 	// Use v. prefix for all vehicle columns and add has_inspection via LEFT JOIN
 	vehicleColumnsAliased := `v.id, v.mgmt_number, v.car_number, v.manufacturer, v.model_name, v.fuel_type,
 		v.transmission, v.year, v.mileage, v.price, v.min_bid_price, v.location,
-		v.organization, v.due_date, v.auction_count, v.status, v.image_urls,
+		v.organization, v.due_date, v.auction_count, v.status, v.image_urls, v.image_labels,
 		v.detail_url, v.source, v.source_id, v.final_price, v.result_status, v.result_date,
 		v.case_number, v.court_name, v.property_type, v.created_at, v.updated_at`
 
@@ -199,7 +211,7 @@ func (r *VehicleRepository) List(ctx context.Context, params models.VehicleListP
 			&v.ID, &v.MgmtNumber, &v.CarNumber, &v.Manufacturer, &v.ModelName,
 			&v.FuelType, &v.Transmission, &v.Year, &v.Mileage, &v.Price,
 			&v.MinBidPrice, &v.Location, &v.Organization, &v.DueDate,
-			&v.AuctionCount, &v.Status, &v.ImageURLs, &v.DetailURL,
+			&v.AuctionCount, &v.Status, &v.ImageURLs, &v.ImageLabels, &v.DetailURL,
 			&v.Source, &v.SourceID, &v.FinalPrice, &v.ResultStatus, &v.ResultDate,
 			&v.CaseNumber, &v.CourtName, &v.PropertyType,
 			&v.CreatedAt, &v.UpdatedAt,
@@ -291,13 +303,13 @@ func (r *VehicleRepository) Upsert(ctx context.Context, req models.VehicleUpsert
 		INSERT INTO vehicles (
 			mgmt_number, car_number, manufacturer, model_name, fuel_type,
 			transmission, year, mileage, price, min_bid_price, location,
-			organization, due_date, auction_count, status, image_urls, detail_url,
+			organization, due_date, auction_count, status, image_urls, image_labels, detail_url,
 			source, source_id, final_price, result_status, result_date,
 			case_number, court_name, property_type,
 			created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-			$18, $19, $20, $21, $22, $23, $24, $25,
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+			$19, $20, $21, $22, $23, $24, $25, $26,
 			NOW(), NOW()
 		)
 		ON CONFLICT (source, source_id) DO UPDATE SET
@@ -317,6 +329,7 @@ func (r *VehicleRepository) Upsert(ctx context.Context, req models.VehicleUpsert
 			auction_count = COALESCE(EXCLUDED.auction_count, vehicles.auction_count),
 			status = COALESCE(EXCLUDED.status, vehicles.status),
 			image_urls = COALESCE(EXCLUDED.image_urls, vehicles.image_urls),
+			image_labels = COALESCE(EXCLUDED.image_labels, vehicles.image_labels),
 			detail_url = COALESCE(EXCLUDED.detail_url, vehicles.detail_url),
 			final_price = COALESCE(EXCLUDED.final_price, vehicles.final_price),
 			result_status = COALESCE(EXCLUDED.result_status, vehicles.result_status),
@@ -332,7 +345,7 @@ func (r *VehicleRepository) Upsert(ctx context.Context, req models.VehicleUpsert
 		req.MgmtNumber, req.CarNumber, req.Manufacturer, req.ModelName, req.FuelType,
 		req.Transmission, req.Year, req.Mileage, req.Price, req.MinBidPrice,
 		req.Location, req.Organization, dueDate, req.AuctionCount, req.Status,
-		req.ImageURLs, req.DetailURL,
+		req.ImageURLs, req.ImageLabels, req.DetailURL,
 		source, sourceID, req.FinalPrice, req.ResultStatus, resultDate,
 		req.CaseNumber, req.CourtName, req.PropertyType,
 	))

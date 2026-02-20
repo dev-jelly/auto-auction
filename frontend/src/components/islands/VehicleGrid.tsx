@@ -329,6 +329,8 @@ function readUrlState(defaultListingType?: string) {
   if (sp.get('price_max')) filters.priceMax = Number(sp.get('price_max'));
   if (sp.get('search')) filters.search = sp.get('search')!;
   if (sp.get('car_number')) filters.carNumber = sp.get('car_number')!;
+  if (sp.get('mileage_min')) filters.mileageMin = Number(sp.get('mileage_min'));
+  if (sp.get('mileage_max')) filters.mileageMax = Number(sp.get('mileage_max'));
   if (sp.get('location')) filters.location = sp.get('location')!;
   if (sp.get('listing_type')) filters.listingType = sp.get('listing_type')!;
   if (sp.get('has_inspection') === 'true') filters.hasInspection = true;
@@ -375,6 +377,8 @@ export default function VehicleGrid({ defaultListingType }: VehicleGridProps = {
       if (filters.yearMin) params.set('year', String(filters.yearMin));
       if (filters.priceMin) params.set('price_min', String(filters.priceMin));
       if (filters.priceMax) params.set('price_max', String(filters.priceMax));
+      if (filters.mileageMin) params.set('mileage_min', String(filters.mileageMin));
+      if (filters.mileageMax) params.set('mileage_max', String(filters.mileageMax));
       if (filters.fuelType) params.set('fuel_type', filters.fuelType);
       if (filters.status) params.set('status', filters.status);
       if (filters.source) params.set('source', filters.source);
@@ -429,6 +433,8 @@ export default function VehicleGrid({ defaultListingType }: VehicleGridProps = {
     if (filters.yearMin) sp.set('year_min', String(filters.yearMin));
     if (filters.priceMin) sp.set('price_min', String(filters.priceMin));
     if (filters.priceMax) sp.set('price_max', String(filters.priceMax));
+    if (filters.mileageMin) sp.set('mileage_min', String(filters.mileageMin));
+    if (filters.mileageMax) sp.set('mileage_max', String(filters.mileageMax));
     if (filters.search) sp.set('search', filters.search);
     if (filters.carNumber) sp.set('car_number', filters.carNumber);
     if (filters.location) sp.set('location', filters.location);

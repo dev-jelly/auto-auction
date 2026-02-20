@@ -16,6 +16,7 @@ export interface Vehicle {
   auction_count?: number;
   status: string;
   image_urls?: string[];
+  image_labels?: string[];
   detail_url?: string;
   created_at: string;
   updated_at: string;
@@ -38,6 +39,8 @@ export interface VehicleFilters {
   fuelType?: string;
   location?: string;
   status?: string;
+  mileageMin?: number;
+  mileageMax?: number;
   search?: string;
   carNumber?: string;
   source?: string;
