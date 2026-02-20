@@ -89,10 +89,20 @@ INSERT INTO market_fuel_mappings (internal_name, encar_name, kcar_code) VALUES
 ON CONFLICT (internal_name) DO NOTHING;
 
 -- Seed model mappings for Encar ModelGroup
-INSERT INTO market_model_mappings (internal_name, manufacturer_korean, encar_model_group) VALUES
-  ('E-클래스 (W213)', '벤츠', 'E-클래스'),
-  ('E-Class (W213)', '벤츠', 'E-클래스'),
-  ('E350 4MATIC',    '벤츠', 'E-클래스'),
-  ('쏘나타 (DN8)',    '현대', '쏘나타'),
-  ('아반떼 (CN7)',    '현대', '아반떼')
+INSERT INTO market_model_mappings (internal_name, manufacturer_korean, encar_model_group, kcar_model_code) VALUES
+  ('E-클래스 (W213)', '벤츠', 'E-클래스', '1716'),
+  ('E-Class (W213)', '벤츠', 'E-클래스', '1716'),
+  ('E350 4MATIC',    '벤츠', 'E-클래스', '1716'),
+  ('쏘나타 (DN8)',    '현대', '쏘나타',    '2154'),
+  ('아반떼 (CN7)',    '현대', '아반떼',    '2174'),
+  ('그랜저 HG HG240 모', '현대', '그랜저',  '004'),
+  ('그랜저(GRANDEUR)',   '현대', '그랜저',  '004'),
+  ('SM6 2.0 GDe LE',     '르노코리아', 'SM6', '010'),
+  ('카니발',              '기아', '카니발', '036'),
+  ('BMW 5시리즈 (F10)',   'BMW',  '5시리즈', '003'),
+  ('EQ900',               '제네시스', 'EQ900', '001'),
+  ('K5',                  '기아', 'K5', '001'),
+  ('포터',                '현대', '포터', '037'),
+  ('포터Ⅱ (PORTERⅡ)',     '현대', '포터', '037'),
+  ('BMW 5시리즈 GT (F0',  'BMW', '5시리즈', '003')
 ON CONFLICT (internal_name, manufacturer_korean) DO NOTHING;

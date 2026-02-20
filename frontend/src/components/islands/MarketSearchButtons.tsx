@@ -62,16 +62,15 @@ function normalizeManufacturer(mfr?: string, mappings?: MarketMappings | null): 
 
 function buildEncarUrl(vehicle: Vehicle, mappings?: MarketMappings | null): string {
   const koMfr = normalizeManufacturer(vehicle.manufacturer, mappings);
-  // Strip trim/variant suffix in parentheses: "아반떼 (CN7)" → "아반떼"
-  let model: string;
+  
+  let modelGroup: string | undefined;
   if (mappings && vehicle.model_name) {
     const modelMapping = mappings.models.find(
       (m) => m.internal_name === vehicle.model_name && m.manufacturer_korean === koMfr
     );
-    model = modelMapping?.encar_model_group || vehicle.model_name.replace(/\s*\(.*?\)\s*$/g, '').trim();
-  } else {
-    model = vehicle.model_name?.replace(/\s*\(.*?\)\s*$/g, '').trim() || '';
+    modelGroup = modelMapping?.encar_model_group;
   }
+
   let carType: string;
   if (mappings) {
     const mfrMapping = mappings.manufacturers.find((m) => m.korean_name === koMfr);
@@ -80,30 +79,12 @@ function buildEncarUrl(vehicle: Vehicle, mappings?: MarketMappings | null): stri
     carType = FOREIGN_KO_NAMES.has(koMfr) ? 'N' : 'Y';
   }
 
-  // Flat DSL format: CarType._.Manufacturer._.ModelGroup._.Year.range(YYYYMM..YYYYMM)._.FuelType.
   const clauses: string[] = [`CarType.${carType}.`];
   if (koMfr) clauses.push(`Manufacturer.${koMfr}.`);
+  if (modelGroup) clauses.push(`ModelGroup.${modelGroup}.`);
 
-  let cleanModel = model;
-  if (koMfr && cleanModel.includes(koMfr)) {
-    cleanModel = cleanModel.replace(koMfr, '').trim();
-  }
-  const mfrNameEn = vehicle.manufacturer?.toLowerCase();
-  if (mfrNameEn) {
-    const mfrParts = mfrNameEn.split(/[- ]/);
-    mfrParts.forEach(part => {
-      if (part.length > 2) {
-        const reg = new RegExp(part, 'gi');
-        cleanModel = cleanModel.replace(reg, '').trim();
-      }
-    });
-  }
-  
-  if (cleanModel) {
-    clauses.push(`ModelGroup.${cleanModel}.`);
-  }
   if (vehicle.year) {
-    clauses.push(`Year.range(${vehicle.year - 1}..${vehicle.year + 1}).`);
+    clauses.push(`Year.range(${vehicle.year - 1}00..${vehicle.year + 1}99).`);
   }
   let encarFuel: string | undefined;
   if (mappings && vehicle.fuel_type) {
@@ -118,7 +99,17 @@ function buildEncarUrl(vehicle: Vehicle, mappings?: MarketMappings | null): stri
 
   const action = `(And.Hidden.N._.MultiView2Hidden.N._.${clauses.join('_.')})`;
 
-  return `https://car.encar.com/list/car?q=${encodeURIComponent(action)}`;
+
+  const searchObj = {
+    type: 'car',
+    action,
+    toggle: {},
+    layer: '',
+    sort: 'MobileModifiedDate',
+    searchQuery: vehicle.model_name?.replace(/\s*\(.*?\)\s*$/g, '').trim() || '',
+  };
+
+  return `https://car.encar.com/list/car?page=1&search=${encodeURIComponent(JSON.stringify(searchObj))}`;
 }
 
 function buildKcarUrl(vehicle: Vehicle, mappings?: MarketMappings | null): string {
@@ -133,6 +124,15 @@ function buildKcarUrl(vehicle: Vehicle, mappings?: MarketMappings | null): strin
     mfrCode = KCAR_MNUFTR_CODE[koMfr];
   }
   if (mfrCode) cond.wr_eq_mnuftr_cd = mfrCode;
+
+  if (mappings && vehicle.model_name) {
+    const modelMapping = mappings.models.find(
+      (m) => m.internal_name === vehicle.model_name && m.manufacturer_korean === koMfr
+    );
+    if (modelMapping?.kcar_model_code) {
+      cond.wr_eq_model_grp_cd = modelMapping.kcar_model_code;
+    }
+  }
 
   if (vehicle.year) {
     cond.wr_gt_mfg_dt = `${vehicle.year - 1}01`;
